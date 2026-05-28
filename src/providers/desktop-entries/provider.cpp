@@ -14,16 +14,32 @@ namespace {
 namespace launcher::provider::desktop_entries {
     class DesktopFileEntry : public interfaces::Entry {
         Glib::RefPtr<Gio::AppInfo> m_app_info;
+        std::string m_icon_string;
+        interfaces::Score m_score;
 
     public:
         DesktopFileEntry(Glib::RefPtr<Gio::AppInfo> app_info) :
-                interfaces::Entry(app_info->get_display_name(),
-                    app_info->get_icon() ? app_info->get_icon()->to_string() : std::string()),
-                m_app_info(std::move(app_info)) {}
+                m_app_info(std::move(app_info)),
+                m_icon_string(m_app_info->get_icon() ? m_app_info->get_icon()->to_string() : std::string()),
+                m_score(0) {}
 
-        using interfaces::Entry::set_score;
+        void set_score(interfaces::Score score) { m_score = score; }
 
         void execute() const final { m_app_info->launch(std::vector<Glib::RefPtr<Gio::File>> {}); }
+
+        [[nodiscard]] virtual std::string_view get_title() const noexcept override {
+            return g_app_info_get_display_name(m_app_info->gobj());
+        }
+
+        [[nodiscard]] virtual std::string_view get_subtitle() const noexcept override { return ""; }
+
+        [[nodiscard]] virtual std::string_view get_icon() const noexcept override {
+            return m_icon_string;
+        }
+
+        [[nodiscard]] virtual interfaces::Score get_score() const noexcept override {
+            return m_score;
+        }
     };
 } // namespace launcher::provider::desktop_entries
 

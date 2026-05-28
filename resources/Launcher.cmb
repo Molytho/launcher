@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
+<!-- Created with Cambalache 1.0.2 -->
+<cambalache-project version="1.0.0" target_tk="gtk-4.0">
+  <gresources filename="ui.gresource.xml" sha256="d71334e7693b291b5cbca75ee71d859ca26b2df18d0e4032887322a50683201a"/>
+  <ui filename="Launcher.ui" sha256="d232c65121d7b91f6b5388ba433aed0eee3e890c41a98386ce3df40062022196"/>
+  <ui template-class="entry-item" filename="ListBoxItem.ui" sha256="2234435901dd982aa9fbe76e45ddba65d9558721e42d04db6fa90ffb458670bf"/>
+</cambalache-project>

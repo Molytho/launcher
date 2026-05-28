@@ -9,15 +9,26 @@ project(
     ]
 )
 
+gnome = import('gnome')
+ui_resource = gnome.compile_resources(
+    'ui',
+    'resources/ui.gresource.xml',
+    source_dir: 'resources',
+    c_name: 'ui'
+)
+
 dependencies = [
+    dependency('gtkmm-4.0'),
     dependency('giomm-2.4')
 ]
 
 sources = [
     'src/launcher.cpp',
     'src/provider_repository.cpp',
+    'src/ui/list_item.cpp',
     'src/utils/fuzzy_matcher.cpp',
-    'src/providers/desktop-entries/provider.cpp'
+    'src/providers/desktop-entries/provider.cpp',
+    ui_resource
 ]
 
 includes = [

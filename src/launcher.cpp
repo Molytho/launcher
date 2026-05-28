@@ -1,7 +1,11 @@
 #include <algorithm>
 #include <iostream>
 
+#include <gtkmm.h>
+
+#include "macros.h"
 #include "provider_repository.h"
+#include "ui/list_item.h"
 
 using namespace launcher;
 
@@ -40,6 +44,28 @@ int main(int argc, [[maybe_unused]] char **argv) {
         std::cout << "Usage: launcher" << std::endl;
         return 1;
     }
+
+    auto app = Gtk::Application::create("de.molytho.launcher");
+
+    app->signal_activate().connect([&]() {
+        auto builder = Gtk::Builder::create_from_resource("/Launcher/Launcher.ui");
+        auto window  = builder->get_widget<Gtk::Window>("launcher");
+        r_assert(window);
+
+        auto listbox = builder->get_widget<Gtk::ListBox>("app-list");
+        r_assert(listbox);
+
+        for (size_t i = 0; i < 1000; i++) {
+            ui::ListItem item {};
+            listbox->append(item);
+        }
+
+        app->signal_window_removed().connect([](Gtk::Window *window) { delete window; });
+        app->add_window(*window);
+        window->set_visible();
+    });
+
+    app->run(argc, argv);
 
     std::string query;
     std::cout << "Insert query: " << std::endl;

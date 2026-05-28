@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Created with Cambalache 1.0.2 -->
+<gresources>
+  <gresource prefix="/Launcher">
+    <file preprocess="xml-stripblanks">Launcher.ui</file>
+    <file preprocess="xml-stripblanks">ListBoxItem.ui</file>
+  </gresource>
+</gresources>
