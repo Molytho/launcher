@@ -8,6 +8,7 @@
 
 namespace launcher {
     class history_provider {
+        bool m_changed {false};
         std::vector<std::string> m_history_entries;
 
     public:

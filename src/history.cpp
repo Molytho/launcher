@@ -1,10 +1,10 @@
 #include "history.h"
 
 #include <algorithm>
-#include <memory>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include "config.h"
 
@@ -26,8 +26,7 @@ namespace {
         result.reserve(max_history_size);
         for (size_t i = max_history_size; i > 0 && !istream.eof(); i--) {
             std::string line;
-            istream >> line;
-            if (!line.empty()) {
+            if (std::getline(istream, line)) {
                 result.push_back(std::move(line));
             }
         }
@@ -50,8 +49,9 @@ namespace launcher {
     history_provider::history_provider() : m_history_entries(read_history()) {}
 
     history_provider::~history_provider() {
-        write_history(m_history_entries);
-        // TODO: Save history
+        if (m_changed) {
+            write_history(m_history_entries);
+        }
     }
 
     void history_provider::boost_history_entries(std::vector<std::shared_ptr<interfaces::Entry>> &entries) const {
@@ -74,5 +74,6 @@ namespace launcher {
             [&](const auto &history_entry) { return entry.get_id() == history_entry; });
         std::shift_right(m_history_entries.begin(), it, 1);
         m_history_entries.front() = entry.get_id();
+        m_changed = true;
     }
 } // namespace launcher
