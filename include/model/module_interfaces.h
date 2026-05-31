@@ -31,7 +31,12 @@ namespace launcher::interfaces {
         // Rework this interface
         [[nodiscard]] virtual std::string_view get_icon() const noexcept = 0;
 
+        // The score interface is bad as well
         [[nodiscard]] virtual Score get_score() const noexcept = 0;
+
+        virtual void boost_score(Score score) noexcept = 0;
+
+        [[nodiscard]] virtual std::string_view get_id() const noexcept = 0;
     };
 
     class Provider {

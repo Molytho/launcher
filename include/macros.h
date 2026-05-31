@@ -5,8 +5,10 @@
 
 // TODO: This should actually print some info
 #define r_assert(cond) \
-    if (!(cond)) {           \
-        std::abort();        \
+    if (!(cond)) {     \
+        std::abort();  \
     }
+
+#define PROJECT_NAME "de.molytho.launcher"
 
 #endif

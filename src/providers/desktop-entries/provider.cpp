@@ -43,6 +43,14 @@ namespace launcher::provider::desktop_entries {
         [[nodiscard]] virtual interfaces::Score get_score() const noexcept override {
             return m_score;
         }
+
+        void boost_score(interfaces::Score score) noexcept override {
+            m_score += score;
+        }
+
+        [[nodiscard]] std::string_view get_id() const noexcept override {
+            return g_app_info_get_id(m_app_info->gobj());
+        }
     };
 } // namespace launcher::provider::desktop_entries
 

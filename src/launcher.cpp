@@ -3,10 +3,11 @@
 
 #include <gtkmm.h>
 
+#include "config.h"
 #include "macros.h"
 #include "provider_repository.h"
-#include "ui/list_item.h"
 #include "ui/main_window.h"
+#include "history.h"
 
 using namespace launcher;
 
@@ -30,7 +31,7 @@ std::ostream &operator<<(std::ostream &os, const std::shared_ptr<T> &ptr) {
     }
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string p_query) {
+std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string p_query, const history_provider &history_provider) {
     const ProviderRepository &repo = ProviderRepository::get_instance();
 
     interfaces::Query query {p_query};
@@ -43,14 +44,16 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string p_quer
             std::make_move_iterator(provider_result.end()));
     }
 
+    history_provider.boost_history_entries(result);
+
     std::ranges::sort(result,
         [](const auto &lhs, const auto &rhs) { return lhs->get_score() > rhs->get_score(); });
 
     return result;
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p_query) {
-    return query_plugins(std::string(p_query));
+std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p_query, const history_provider &history_provider) {
+    return query_plugins(std::string(p_query), history_provider);
 }
 
 void setup_css_providers() {
@@ -59,11 +62,14 @@ void setup_css_providers() {
         css_provider->load_from_resource("/Launcher/style.css");
         Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), css_provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
-    /*{
-        auto css_provider = Gtk::CssProvider::create();
-        css_provider->load_from_path("/home/robin/.config/sirula/style.css");
-        Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
-    }*/
+    {
+        auto path = get_config_dir().append("style.css");
+        if (std::filesystem::is_regular_file(path)) {
+            auto css_provider = Gtk::CssProvider::create();
+            css_provider->load_from_path(path);
+            Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
+        }
+    }
 }
 
 int main(int argc, [[maybe_unused]] char **argv) {
@@ -72,22 +78,27 @@ int main(int argc, [[maybe_unused]] char **argv) {
         return 1;
     }
 
-    auto app = Gtk::Application::create("de.molytho.launcher");
+    history_provider history {};
+
+    auto app = Gtk::Application::create(PROJECT_NAME);
     app->signal_activate().connect([&]() {
         setup_css_providers();
 
         auto builder = Gtk::Builder::create_from_resource("/Launcher/Launcher.ui");
-        auto window  = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher");
+        r_assert(builder);
+        auto window = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher");
         r_assert(window);
-        window->signal_entry_selected().connect([](auto entry_ptr) {
+        window->signal_entry_selected().connect([&history](auto entry_ptr) {
+            r_assert(entry_ptr);
+            history.add_to_history(*entry_ptr);
             entry_ptr->execute();
         });
-        window->signal_query_changed().connect([window](std::string_view str) {
-            auto results = query_plugins(str);
+        window->signal_query_changed().connect([window, &history](std::string_view str) {
+            auto results = query_plugins(str, history);
             window->set_entries(results);
         });
         {
-            auto results = query_plugins(std::string(""));
+            auto results = query_plugins(std::string(""), history);
             window->set_entries(results);
         }
 

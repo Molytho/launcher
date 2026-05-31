@@ -24,6 +24,7 @@ namespace launcher::ui {
     }
 
     bool MainWindow::entry_has_focus() const noexcept {
+        // GtkEntry's implementation is broken as fuck...
         auto focus = get_focus();
         if (!focus) {
             return false;

@@ -25,9 +25,12 @@ dependencies = [
 sources = [
     'src/launcher.cpp',
     'src/provider_repository.cpp',
+    'src/config.cpp',
+    'src/history.cpp',
     'src/ui/list_item.cpp',
     'src/ui/main_window.cpp',
     'src/utils/fuzzy_matcher.cpp',
+    'src/utils/xdg_base_directory.cpp',
     'src/providers/desktop-entries/provider.cpp',
     ui_resource
 ]
