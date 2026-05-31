@@ -2,7 +2,12 @@
 <!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
 <!-- Created with Cambalache 1.0.2 -->
 <cambalache-project version="1.0.0" target_tk="gtk-4.0">
-  <gresources filename="ui.gresource.xml" sha256="d71334e7693b291b5cbca75ee71d859ca26b2df18d0e4032887322a50683201a"/>
-  <ui filename="Launcher.ui" sha256="d232c65121d7b91f6b5388ba433aed0eee3e890c41a98386ce3df40062022196"/>
-  <ui template-class="entry-item" filename="ListBoxItem.ui" sha256="2234435901dd982aa9fbe76e45ddba65d9558721e42d04db6fa90ffb458670bf"/>
+  <gresources filename="ui.gresource.xml" sha256="da8ee9d7529e6cdc71c20c391f59dd3238c06e1d8f89c82df791fe86d111d81e"/>
+  <css priority="600" is_global="1" filename="style.css" sha256="ec488e4070cc78963a102edffc262967fcc91e6a18f3cc7ad03296909c5b331c"/>
+  <ui filename="Launcher.ui" sha256="f2a891e40de14c645a7d334bfcd2f27097ffdab10334414d99debb2fd4f23300">
+    <css-provider>style.css</css-provider>
+  </ui>
+  <ui template-class="gtkmm__CustomObject_MyListBoxItem" filename="ListBoxItem.ui" sha256="2a54a8084a5ebfc0efd24f6c4891966f8b59b7bfec4b215c98e24f5962d53188">
+    <css-provider>style.css</css-provider>
+  </ui>
 </cambalache-project>

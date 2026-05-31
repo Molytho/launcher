@@ -31,7 +31,10 @@ namespace launcher::provider::desktop_entries {
             return g_app_info_get_display_name(m_app_info->gobj());
         }
 
-        [[nodiscard]] virtual std::string_view get_subtitle() const noexcept override { return ""; }
+        [[nodiscard]] virtual std::string_view get_subtitle() const noexcept override {
+            auto desc = g_app_info_get_description(m_app_info->gobj());
+            return desc ? desc : "";
+        }
 
         [[nodiscard]] virtual std::string_view get_icon() const noexcept override {
             return m_icon_string;

@@ -4,5 +4,6 @@
   <gresource prefix="/Launcher">
     <file preprocess="xml-stripblanks">Launcher.ui</file>
     <file preprocess="xml-stripblanks">ListBoxItem.ui</file>
+    <file>style.css</file>
   </gresource>
 </gresources>

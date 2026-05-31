@@ -26,6 +26,7 @@ sources = [
     'src/launcher.cpp',
     'src/provider_repository.cpp',
     'src/ui/list_item.cpp',
+    'src/ui/main_window.cpp',
     'src/utils/fuzzy_matcher.cpp',
     'src/providers/desktop-entries/provider.cpp',
     ui_resource

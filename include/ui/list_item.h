@@ -4,6 +4,8 @@
 #include <glibmm/extraclassinit.h>
 #include <gtkmm.h>
 
+#include "model/module_interfaces.h"
+
 namespace launcher::ui {
     class ListItemExtraInit : public Glib::ExtraClassInit {
     public:
@@ -11,9 +13,23 @@ namespace launcher::ui {
     };
 
     class ListItem : public ListItemExtraInit, public Gtk::ListBoxRow {
+        std::shared_ptr<interfaces::Entry> m_entry;
+
     public:
-        ListItem();
+        ListItem(std::shared_ptr<interfaces::Entry> entry);
         ~ListItem() override;
+
+        void set_title(std::string str);
+        void set_subtitle(std::string str);
+        void set_icon(std::string str);
+
+        void set_title(std::string_view str);
+        void set_subtitle(std::string_view str);
+        void set_icon(std::string_view str);
+
+        std::shared_ptr<interfaces::Entry> get_entry() const {
+            return m_entry;
+        }
     };
 } // namespace launcher::ui
 

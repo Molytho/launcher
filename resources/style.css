@@ -1,0 +1,41 @@
+#launcher {
+    background: #303030E0;
+    border-radius: 5px;
+}
+
+#app-list {
+    background: #00000000;
+}
+
+#root-box {
+    padding: 5px;
+}
+
+#search {
+    font-family: Roboto;
+    font-size: 14px;
+}
+
+.app-row {
+    transition: unset;
+    background-color: #263238;
+    border-radius: 5px;
+}
+
+.app-row:selected {
+    background-color: #37474F;
+    border-left: 6px solid #00000040;
+}
+
+.app-title {
+    font-weight: 600;
+}
+
+.app-subtitle {
+    font-weight: 300;
+}
+
+.app-label {
+    font-family: Roboto;
+    font-size: 14px;
+}
