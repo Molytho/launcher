@@ -21,6 +21,8 @@ namespace launcher::ui {
         void emit_entry_selected(Gtk::ListBoxRow *row);
         void emit_query_changed() const;
 
+        bool entry_has_focus() const noexcept;
+
     public:
         MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder);
 

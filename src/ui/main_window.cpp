@@ -11,24 +11,59 @@ namespace launcher::ui {
             m_listbox(builder->get_widget<Gtk::ListBox>("app-list")) {
         m_entry->property_text().signal_changed().connect(sigc::mem_fun(*this, &MainWindow::emit_query_changed));
         m_listbox->signal_row_activated().connect(sigc::mem_fun(*this, &MainWindow::emit_entry_selected));
-
         setup_controllers();
     }
 
     void MainWindow::setup_controllers() {
         add_controller([&]() {
             auto key_controller = Gtk::EventControllerKey::create();
-            key_controller->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
-            key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &MainWindow::on_key_pressed), true);
+            key_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+            key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &MainWindow::on_key_pressed), false);
             return key_controller;
         }());
     }
 
+    bool MainWindow::entry_has_focus() const noexcept {
+        auto focus = get_focus();
+        if (!focus) {
+            return false;
+        }
+        auto parent = focus->get_parent();
+        if (!parent) {
+            return false;
+        }
+        return parent == m_entry.get();
+    }
+
     bool MainWindow::on_key_pressed(guint keyval, guint, Gdk::ModifierType) {
-        if (keyval == GDK_KEY_Escape) {
+        switch (keyval) {
+        case GDK_KEY_Escape:
             close();
             return true;
+        case GDK_KEY_Down: {
+            if (entry_has_focus()) {
+                if (auto row = m_listbox->get_row_at_index(1); row) {
+                    m_listbox->select_row(*row);
+                    row->grab_focus();
+                    return true;
+                }
+            }
+            break;
         }
+        case GDK_KEY_Up:
+            if (auto row = m_listbox->get_row_at_index(0); row && row->is_focus()) {
+                m_entry->grab_focus_without_selecting();
+                return true;
+            }
+            break;
+        case GDK_KEY_Return: {
+            if (auto row = m_listbox->get_selected_row(); row) {
+                row->activate();
+                return true;
+            }
+        }
+        }
+
         return false;
     }
 
