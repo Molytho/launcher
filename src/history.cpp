@@ -13,7 +13,10 @@ namespace {
     constexpr launcher::interfaces::Score boost_value = 20;
     constexpr launcher::interfaces::Score boost_decay = 2;
 
-    std::filesystem::path get_history_file_path() {
+    std::filesystem::path get_history_file_path(bool mkdir = false) {
+        if (mkdir) {
+            std::filesystem::create_directories(launcher::get_state_dir());
+        }
         return launcher::get_state_dir().append("history");
     }
 
@@ -34,7 +37,7 @@ namespace {
     }
 
     void write_history(const std::vector<std::string> &history) {
-        std::ofstream ostream {get_history_file_path(), std::ios_base::out | std::ios_base::trunc};
+        std::ofstream ostream {get_history_file_path(true), std::ios_base::out | std::ios_base::trunc};
         for (const auto &entry : history) {
             if (entry.find('\n') != std::string::npos) {
                 std::cerr << "History entry id contains newline. Skipping.\n";

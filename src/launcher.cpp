@@ -46,7 +46,7 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string p_quer
 
     history_provider.boost_history_entries(result);
 
-    std::ranges::sort(result,
+    std::ranges::stable_sort(result,
         [](const auto &lhs, const auto &rhs) { return lhs->get_score() > rhs->get_score(); });
 
     return result;
