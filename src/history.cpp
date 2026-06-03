@@ -25,6 +25,7 @@ namespace {
         return launcher::get_state_dir().append("history");
     }
 
+    // TODO: History locking
     std::vector<std::string> read_history() {
         std::ifstream istream {get_history_file_path()};
         if (!istream.is_open()) {
@@ -75,11 +76,14 @@ namespace launcher {
     }
 
     void history_provider::add_to_history(const Entry &entry) {
-        if (m_history_entries.size() < max_history_size) {
-            m_history_entries.resize(m_history_entries.size() + 1);
-        }
         auto it = std::ranges::find_if(m_history_entries,
             [&](const auto &history_entry) { return entry.get_id() == history_entry; });
+        if (it != m_history_entries.end()) {
+            it++;
+        } else if (m_history_entries.size() < max_history_size) {
+            m_history_entries.resize(m_history_entries.size() + 1);
+            it = m_history_entries.end();
+        }
         std::shift_right(m_history_entries.begin(), it, 1);
         m_history_entries.front() = entry.get_id();
         m_changed                 = true;
