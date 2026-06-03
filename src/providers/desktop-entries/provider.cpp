@@ -15,15 +15,11 @@ namespace launcher::provider::desktop_entries {
     class DesktopFileEntry : public interfaces::Entry {
         Glib::RefPtr<Gio::AppInfo> m_app_info;
         std::string m_icon_string;
-        interfaces::Score m_score;
 
     public:
         DesktopFileEntry(Glib::RefPtr<Gio::AppInfo> app_info) :
                 m_app_info(std::move(app_info)),
-                m_icon_string(m_app_info->get_icon() ? m_app_info->get_icon()->to_string() : std::string()),
-                m_score(0) {}
-
-        void set_score(interfaces::Score score) { m_score = score; }
+                m_icon_string(m_app_info->get_icon() ? m_app_info->get_icon()->to_string() : std::string()) {}
 
         void execute() const final { m_app_info->launch(std::vector<Glib::RefPtr<Gio::File>> {}); }
 
@@ -40,15 +36,11 @@ namespace launcher::provider::desktop_entries {
             return m_icon_string;
         }
 
-        [[nodiscard]] virtual interfaces::Score get_score() const noexcept override {
-            return m_score;
-        }
-
-        void boost_score(interfaces::Score score) noexcept override { m_score += score; }
-
         [[nodiscard]] std::string_view get_id() const noexcept override {
             return g_app_info_get_id(m_app_info->gobj());
         }
+
+        using interfaces::Entry::set_score;
     };
 } // namespace launcher::provider::desktop_entries
 

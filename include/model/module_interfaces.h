@@ -6,45 +6,56 @@
 #include <string_view>
 #include <vector>
 
-namespace launcher::interfaces {
-    using Score = int64_t;
+namespace launcher {
+    class history_provider;
 
-    class Query {
-        std::string m_query;
+    namespace interfaces {
+        using Score = int64_t;
 
-    public:
-        constexpr Query(std::string query) noexcept : m_query(std::move(query)) {}
+        class Query {
+            std::string m_query;
 
-        [[nodiscard]] constexpr std::string_view get_query() const noexcept { return m_query; }
-    };
+        public:
+            constexpr Query(std::string query) noexcept : m_query(std::move(query)) {}
 
-    class Entry {
-    public:
-        virtual ~Entry() = default;
+            [[nodiscard]] constexpr std::string_view get_query() const noexcept { return m_query; }
+        };
 
-        virtual void execute() const = 0;
+        class Entry {
+        private:
+            friend launcher::history_provider;
 
-        [[nodiscard]] virtual std::string_view get_title() const noexcept = 0;
+            Score m_score {};
 
-        [[nodiscard]] virtual std::string_view get_subtitle() const noexcept = 0;
+        protected:
+            void set_score(Score score) noexcept { m_score = score; }
 
-        // Rework this interface
-        [[nodiscard]] virtual std::string_view get_icon() const noexcept = 0;
+            void boost_score(Score score) noexcept { m_score += score; }
 
-        // The score interface is bad as well
-        [[nodiscard]] virtual Score get_score() const noexcept = 0;
+        public:
+            virtual ~Entry() = default;
 
-        virtual void boost_score(Score score) noexcept = 0;
+            virtual void execute() const = 0;
 
-        [[nodiscard]] virtual std::string_view get_id() const noexcept = 0;
-    };
+            [[nodiscard]] virtual std::string_view get_title() const noexcept = 0;
 
-    class Provider {
-    public:
-        virtual ~Provider() = default;
+            [[nodiscard]] virtual std::string_view get_subtitle() const noexcept = 0;
 
-        [[nodiscard]] virtual std::vector<std::shared_ptr<Entry>> query(const Query &query) const = 0;
-    };
-} // namespace launcher::interfaces
+            // Rework this interface
+            [[nodiscard]] virtual std::string_view get_icon() const noexcept = 0;
+
+            [[nodiscard]] virtual std::string_view get_id() const noexcept = 0;
+
+            [[nodiscard]] Score get_score() const noexcept { return m_score; }
+        };
+
+        class Provider {
+        public:
+            virtual ~Provider() = default;
+
+            [[nodiscard]] virtual std::vector<std::shared_ptr<Entry>> query(const Query &query) const = 0;
+        };
+    } // namespace interfaces
+} // namespace launcher
 
 #endif
