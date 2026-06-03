@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "macros.h"
+#include "model/module_interfaces.h"
 #include "utils/xdg_base_directory.h"
 
 namespace po = boost::program_options;
@@ -12,6 +13,10 @@ namespace {
     constexpr char OptionHeight[]   = "height";
     constexpr char OptionWidth[]    = "width";
     constexpr char OptionIconSize[] = "icon-size";
+
+    constexpr char OptionHistoryMaxSize[] = "history.max-size";
+    constexpr char OptionHistoryBoost[]   = "history.boost";
+    constexpr char OptionHistoryDecay[]   = "history.decay";
 
     std::filesystem::path get_config_file_path() {
         auto path = launcher::get_config_dir();
@@ -35,7 +40,10 @@ namespace launcher {
         options.add_options()
             (OptionHeight, po::value<int>()->default_value(600))
             (OptionWidth, po::value<int>()->default_value(1300))
-            (OptionIconSize, po::value<int>()->default_value(64));
+            (OptionIconSize, po::value<int>()->default_value(64))
+            (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
+            (OptionHistoryBoost, po::value<interfaces::Score>()->default_value(10))
+            (OptionHistoryDecay, po::value<double>());
         // clang-format on
         return options;
     }
@@ -65,5 +73,22 @@ namespace launcher {
 
     int options::get_icon_size() const noexcept {
         return m_results[OptionIconSize].as<int>();
+    }
+
+    size_t options::get_history_max_size() const noexcept {
+        return m_results[OptionHistoryMaxSize].as<size_t>();
+    }
+
+    interfaces::Score options::get_history_boost() const noexcept {
+        return m_results[OptionHistoryBoost].as<interfaces::Score>();
+    }
+
+    double options::get_history_decay() const noexcept {
+        auto it = m_results.find(OptionHistoryDecay);
+        if (it != m_results.end()) {
+            return it->second.as<double>();
+        } else {
+            return static_cast<double>(get_history_boost()) / get_history_max_size();
+        }
     }
 } // namespace launcher

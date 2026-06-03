@@ -14,10 +14,6 @@ using namespace launcher::interfaces;
 namespace fs = std::filesystem;
 
 namespace {
-    constexpr size_t max_history_size = 10;
-    constexpr Score boost_value       = 20;
-    constexpr Score boost_decay       = 2;
-
     fs::path get_history_file_path(bool mkdir = false) {
         if (mkdir) {
             fs::create_directories(launcher::get_state_dir());
@@ -26,13 +22,12 @@ namespace {
     }
 
     // TODO: History locking
-    std::vector<std::string> read_history() {
+    std::vector<std::string> read_history(size_t max_history_size) {
         std::ifstream istream {get_history_file_path()};
         if (!istream.is_open()) {
             return {};
         }
         std::vector<std::string> result;
-        result.reserve(max_history_size);
         for (size_t i = max_history_size; i > 0 && !istream.eof(); i--) {
             std::string line;
             if (std::getline(istream, line)) {
@@ -55,7 +50,8 @@ namespace {
 } // namespace
 
 namespace launcher {
-    history_provider::history_provider() : m_history_entries(read_history()) {}
+    history_provider::history_provider(const options &options) :
+            m_history_entries(read_history(options.get_history_max_size())), m_options(options) {}
 
     history_provider::~history_provider() {
         if (m_changed) {
@@ -64,12 +60,13 @@ namespace launcher {
     }
 
     void history_provider::boost_history_entries(std::vector<std::shared_ptr<Entry>> &entries) const {
-        Score boost = boost_value;
+        double boost             = m_options.get_history_boost();
+        const double boost_decay = m_options.get_history_decay();
         for (const std::string &history_entry : m_history_entries) {
             auto it = std::ranges::find_if(entries,
                 [&](const auto &entry) { return entry->get_id() == history_entry; });
             if (it != entries.end()) {
-                (*it)->boost_score(boost);
+                (*it)->boost_score(Score(boost));
             }
             boost -= boost_decay;
         }
@@ -80,7 +77,7 @@ namespace launcher {
             [&](const auto &history_entry) { return entry.get_id() == history_entry; });
         if (it != m_history_entries.end()) {
             it++;
-        } else if (m_history_entries.size() < max_history_size) {
+        } else if (m_history_entries.size() < m_options.get_history_max_size()) {
             m_history_entries.resize(m_history_entries.size() + 1);
             it = m_history_entries.end();
         }

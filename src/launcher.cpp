@@ -81,7 +81,7 @@ int main(int argc, [[maybe_unused]] char **argv) {
     }
 
     options options {argc, argv};
-    history_provider history {};
+    history_provider history {options};
 
     auto app = Gtk::Application::create(PROJECT_NAME);
     app->signal_activate().connect([&]() {

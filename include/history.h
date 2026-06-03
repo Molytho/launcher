@@ -6,13 +6,16 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
+
 namespace launcher {
     class history_provider {
         bool m_changed {false};
         std::vector<std::string> m_history_entries;
+        const options &m_options;
 
     public:
-        history_provider();
+        history_provider(const options &options);
         ~history_provider();
 
         void boost_history_entries(std::vector<std::shared_ptr<interfaces::Entry>> &entries) const;

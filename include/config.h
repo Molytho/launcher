@@ -5,6 +5,8 @@
 
 #include <boost/program_options.hpp>
 
+#include "model/module_interfaces.h"
+
 namespace launcher {
     std::filesystem::path get_config_dir();
     std::filesystem::path get_state_dir();
@@ -21,6 +23,10 @@ namespace launcher {
         int get_height() const noexcept;
         int get_width() const noexcept;
         int get_icon_size() const noexcept;
+
+        size_t get_history_max_size() const noexcept;
+        interfaces::Score get_history_boost() const noexcept;
+        double get_history_decay() const noexcept;
     };
 } // namespace launcher
 
