@@ -5,6 +5,7 @@
 
 #include <span>
 
+#include "config.h"
 #include "model/module_interfaces.h"
 
 namespace launcher::ui {
@@ -14,6 +15,7 @@ namespace launcher::ui {
         Glib::RefPtr<Gtk::ListBox> m_listbox;
         sigc::signal<void(const std::shared_ptr<interfaces::Entry> &)> m_signal_entry_selected {};
         sigc::signal<void(std::string_view)> m_signal_query_changed {};
+        const options &m_options;
 
         void setup_controllers();
         bool on_key_pressed(guint keyval, guint, Gdk::ModifierType);
@@ -24,7 +26,7 @@ namespace launcher::ui {
         bool entry_has_focus() const noexcept;
 
     public:
-        MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder);
+        MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options);
 
         // TODO: Technically this should be a view
         void set_entries(std::span<std::shared_ptr<interfaces::Entry>> entries);

@@ -4,10 +4,10 @@
 #include <gtkmm.h>
 
 #include "config.h"
+#include "history.h"
 #include "macros.h"
 #include "provider_repository.h"
 #include "ui/main_window.h"
-#include "history.h"
 
 using namespace launcher;
 
@@ -31,7 +31,8 @@ std::ostream &operator<<(std::ostream &os, const std::shared_ptr<T> &ptr) {
     }
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string p_query, const history_provider &history_provider) {
+std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
+    std::string p_query, const history_provider &history_provider) {
     const ProviderRepository &repo = ProviderRepository::get_instance();
 
     interfaces::Query query {p_query};
@@ -52,7 +53,8 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string p_quer
     return result;
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p_query, const history_provider &history_provider) {
+std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
+    std::string_view p_query, const history_provider &history_provider) {
     return query_plugins(std::string(p_query), history_provider);
 }
 
@@ -78,6 +80,7 @@ int main(int argc, [[maybe_unused]] char **argv) {
         return 1;
     }
 
+    options options {argc, argv};
     history_provider history {};
 
     auto app = Gtk::Application::create(PROJECT_NAME);
@@ -86,7 +89,7 @@ int main(int argc, [[maybe_unused]] char **argv) {
 
         auto builder = Gtk::Builder::create_from_resource("/Launcher/Launcher.ui");
         r_assert(builder);
-        auto window = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher");
+        auto window = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher", options);
         r_assert(window);
         window->signal_entry_selected().connect([&history](auto entry_ptr) {
             r_assert(entry_ptr);
@@ -101,8 +104,10 @@ int main(int argc, [[maybe_unused]] char **argv) {
             auto results = query_plugins(std::string(""), history);
             window->set_entries(results);
         }
-
         app->signal_window_removed().connect([](Gtk::Window *window) { delete window; });
+
+        window->set_default_size(options.get_width(), options.get_height());
+
         app->add_window(*window);
         window->set_visible();
     });

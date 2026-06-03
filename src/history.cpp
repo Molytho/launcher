@@ -8,14 +8,19 @@
 
 #include "config.h"
 
-namespace {
-    constexpr size_t max_history_size                 = 10;
-    constexpr launcher::interfaces::Score boost_value = 20;
-    constexpr launcher::interfaces::Score boost_decay = 2;
+using namespace launcher;
+using namespace launcher::interfaces;
 
-    std::filesystem::path get_history_file_path(bool mkdir = false) {
+namespace fs = std::filesystem;
+
+namespace {
+    constexpr size_t max_history_size = 10;
+    constexpr Score boost_value       = 20;
+    constexpr Score boost_decay       = 2;
+
+    fs::path get_history_file_path(bool mkdir = false) {
         if (mkdir) {
-            std::filesystem::create_directories(launcher::get_state_dir());
+            fs::create_directories(launcher::get_state_dir());
         }
         return launcher::get_state_dir().append("history");
     }
@@ -57,8 +62,8 @@ namespace launcher {
         }
     }
 
-    void history_provider::boost_history_entries(std::vector<std::shared_ptr<interfaces::Entry>> &entries) const {
-        interfaces::Score boost = boost_value;
+    void history_provider::boost_history_entries(std::vector<std::shared_ptr<Entry>> &entries) const {
+        Score boost = boost_value;
         for (const std::string &history_entry : m_history_entries) {
             auto it = std::ranges::find_if(entries,
                 [&](const auto &entry) { return entry->get_id() == history_entry; });
@@ -69,7 +74,7 @@ namespace launcher {
         }
     }
 
-    void history_provider::add_to_history(const interfaces::Entry &entry) {
+    void history_provider::add_to_history(const Entry &entry) {
         if (m_history_entries.size() < max_history_size) {
             m_history_entries.resize(m_history_entries.size() + 1);
         }
@@ -77,6 +82,6 @@ namespace launcher {
             [&](const auto &history_entry) { return entry.get_id() == history_entry; });
         std::shift_right(m_history_entries.begin(), it, 1);
         m_history_entries.front() = entry.get_id();
-        m_changed = true;
+        m_changed                 = true;
     }
 } // namespace launcher

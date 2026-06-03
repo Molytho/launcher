@@ -34,10 +34,16 @@ namespace launcher::ui {
     ListItemExtraInit::ListItemExtraInit() :
             Glib::ExtraClassInit(class_init_function, nullptr, class_instances_init_function) {}
 
-    ListItem::ListItem(std::shared_ptr<interfaces::Entry> entry) :
+    ListItem::ListItem(std::shared_ptr<interfaces::Entry> entry, int icon_size) :
             Glib::ObjectBase("MyListBoxItem"), ListItemExtraInit(), Gtk::ListBoxRow(),
             m_entry(std::move(entry)) {
         r_assert(m_entry);
+
+        auto image = GTK_IMAGE(
+            gtk_widget_get_template_child(GTK_WIDGET(gobj()), G_TYPE_FROM_INSTANCE(gobj()), "Icon"));
+        r_assert(image);
+        gtk_image_set_pixel_size(image, icon_size);
+
         set_title(m_entry->get_title());
         set_subtitle(m_entry->get_subtitle());
         set_icon(m_entry->get_icon());
@@ -67,7 +73,6 @@ namespace launcher::ui {
         r_assert(image);
         auto icon = Gio::Icon::create(str);
         gtk_image_set_from_gicon(image, icon->gobj());
-        gtk_image_set_pixel_size(image, 64);
     }
 
     void ListItem::set_title(std::string_view str) {

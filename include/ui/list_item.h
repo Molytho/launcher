@@ -16,7 +16,7 @@ namespace launcher::ui {
         std::shared_ptr<interfaces::Entry> m_entry;
 
     public:
-        ListItem(std::shared_ptr<interfaces::Entry> entry);
+        ListItem(std::shared_ptr<interfaces::Entry> entry, int icon_size);
         ~ListItem() override;
 
         void set_title(std::string str);

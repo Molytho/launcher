@@ -5,10 +5,11 @@
 #include "macros.h"
 
 namespace launcher::ui {
-    MainWindow::MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder) :
+    MainWindow::MainWindow(
+        GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options) :
             Gtk::Window(base_object), m_entry(builder->get_widget<Gtk::Entry>("search")),
             m_scroll(builder->get_widget<Gtk::ScrolledWindow>("scroll")),
-            m_listbox(builder->get_widget<Gtk::ListBox>("app-list")) {
+            m_listbox(builder->get_widget<Gtk::ListBox>("app-list")), m_options(options) {
         m_entry->property_text().signal_changed().connect(sigc::mem_fun(*this, &MainWindow::emit_query_changed));
         m_listbox->signal_row_activated().connect(sigc::mem_fun(*this, &MainWindow::emit_entry_selected));
         setup_controllers();
@@ -85,7 +86,7 @@ namespace launcher::ui {
         m_listbox->remove_all();
         // TODO: Using a view would allow this to move items
         for (const auto &entry : entries) {
-            auto list_item = Gtk::make_managed<ListItem>(entry);
+            auto list_item = Gtk::make_managed<ListItem>(entry, m_options.get_icon_size());
             r_assert(list_item);
             m_listbox->append(*list_item);
         }
