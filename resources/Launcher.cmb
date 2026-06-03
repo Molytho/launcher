@@ -4,10 +4,10 @@
 <cambalache-project version="1.0.0" target_tk="gtk-4.0">
   <gresources filename="ui.gresource.xml" sha256="da8ee9d7529e6cdc71c20c391f59dd3238c06e1d8f89c82df791fe86d111d81e"/>
   <css priority="600" is_global="1" filename="style.css" sha256="e8a738c5e9a47c5e312d2f393f0fb1cbd8a819b48da79fbe7e7906e043e128ee"/>
-  <ui filename="Launcher.ui" sha256="24626a551fae7eaada2cc48b56b2c2fe0481a1bed7f57fcd7c8914a1aac6c63e">
+  <ui filename="Launcher.ui" sha256="d98250b6c9375e88a073247c611fcffd2af1460d932bc5f9e22c0407d06627bc">
     <css-provider>style.css</css-provider>
   </ui>
-  <ui template-class="gtkmm__CustomObject_MyListBoxItem" filename="ListBoxItem.ui" sha256="2a54a8084a5ebfc0efd24f6c4891966f8b59b7bfec4b215c98e24f5962d53188">
+  <ui template-class="gtkmm__CustomObject_MyListBoxItem" filename="ListBoxItem.ui" sha256="45a1bb327fcd9925a08dda2a806f5546529077f60c1c49a6558f1ef936e10ea1">
     <css-provider>style.css</css-provider>
   </ui>
 </cambalache-project>

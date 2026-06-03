@@ -13,12 +13,12 @@
         <property name="vexpand">True</property>
         <child>
           <object class="GtkEntry" id="search">
-            <property name="focusable">True</property>
             <property name="name">search</property>
           </object>
         </child>
         <child>
           <object class="GtkScrolledWindow" id="scroll">
+            <property name="hexpand">True</property>
             <property name="hscrollbar-policy">never</property>
             <property name="margin-end">5</property>
             <property name="margin-start">5</property>
@@ -27,7 +27,10 @@
             <child>
               <object class="GtkListBox" id="app-list">
                 <property name="css-classes">app-list</property>
+                <property name="focusable">False</property>
+                <property name="hexpand">True</property>
                 <property name="name">app-list</property>
+                <property name="vexpand">True</property>
               </object>
             </child>
           </object>
