@@ -16,6 +16,6 @@ namespace launcher {
 
         std::vector<std::shared_ptr<interfaces::Provider>> get_active_providers() const;
     };
-} // namespace launcher::core
+} // namespace launcher
 
 #endif

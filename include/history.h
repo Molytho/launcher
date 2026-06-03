@@ -1,10 +1,10 @@
 #ifndef LAUNCHER_HISTORY_H
 #define LAUNCHER_HISTORY_H
 
-# include "model/module_interfaces.h"
+#include "model/module_interfaces.h"
 
-# include <vector>
 #include <string>
+#include <vector>
 
 namespace launcher {
     class history_provider {
