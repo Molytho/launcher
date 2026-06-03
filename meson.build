@@ -19,7 +19,7 @@ ui_resource = gnome.compile_resources(
 
 dependencies = [
     dependency('gtkmm-4.0'),
-    dependency('giomm-2.4')
+    dependency('giomm-2.68')
 ]
 
 sources = [
