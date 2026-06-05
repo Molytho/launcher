@@ -134,19 +134,4 @@ namespace launcher::ui {
         std::string_view str = gtk_editable_get_text(GTK_EDITABLE(m_entry->gobj()));
         m_signal_query_changed.emit(str);
     }
-
-    void MainWindow::set_entries(std::span<std::shared_ptr<interfaces::Entry>> entries) {
-        m_listbox->remove_all();
-        // TODO: Using a view would allow this to move items
-        for (const auto &entry : entries) {
-            auto list_item = Gtk::make_managed<ListItem>(entry, m_options.get_icon_size());
-            r_assert(list_item);
-            m_listbox->append(*list_item);
-        }
-        if (auto first_row = m_listbox->get_row_at_index(0); first_row) {
-            m_scroll->get_vadjustment()->set_value(0);
-            m_listbox->select_row(*first_row);
-        }
-    }
-
 } // namespace launcher::ui

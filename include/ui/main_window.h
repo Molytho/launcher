@@ -3,10 +3,12 @@
 
 #include <gtkmm.h>
 
+#include <ranges>
 #include <span>
 
 #include "config.h"
 #include "model/module_interfaces.h"
+#include "ui/list_item.h"
 
 namespace launcher::ui {
     class MainWindow : public Gtk::Window {
@@ -30,8 +32,24 @@ namespace launcher::ui {
     public:
         MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options);
 
-        // TODO: Technically this should be a view
-        void set_entries(std::span<std::shared_ptr<interfaces::Entry>> entries);
+        template<class It>
+        void set_entries(It begin, It end) {
+            m_listbox->remove_all();
+            for (auto entry : std::ranges::subrange(begin, end)) {
+                auto list_item = Gtk::make_managed<ListItem>(std::move(entry), m_options.get_icon_size());
+                r_assert(list_item);
+                m_listbox->append(*list_item);
+            }
+            if (auto first_row = m_listbox->get_row_at_index(0); first_row) {
+                m_scroll->get_vadjustment()->set_value(0);
+                m_listbox->select_row(*first_row);
+            }
+        }
+
+        template<std::ranges::input_range Range>
+        void set_entries(Range &&range) {
+            set_entries(std::ranges::begin(range), std::ranges::end(range));
+        }
 
         sigc::signal<void(const std::shared_ptr<interfaces::Entry> &)> signal_entry_selected() const noexcept {
             return m_signal_entry_selected;

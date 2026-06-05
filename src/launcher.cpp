@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <ranges>
 
 #include <gtkmm.h>
 
@@ -10,26 +11,6 @@
 #include "ui/main_window.h"
 
 using namespace launcher;
-
-std::ostream &operator<<(std::ostream &os, const interfaces::Entry &entry) {
-    return os
-           << entry.get_title()
-           << ", "
-           << entry.get_subtitle()
-           << ", "
-           << entry.get_icon()
-           << ", "
-           << entry.get_score();
-}
-
-template<class T>
-std::ostream &operator<<(std::ostream &os, const std::shared_ptr<T> &ptr) {
-    if (ptr) {
-        return os << *ptr;
-    } else {
-        return os << "nullptr";
-    }
-}
 
 std::vector<std::pair<char, interfaces::Query>> make_queries(std::string_view query) {
     if (query.empty()) {
@@ -69,6 +50,11 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
 std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
     std::string_view p_query, const history_provider &history_provider) {
     return query_plugins(std::string(p_query), history_provider);
+}
+
+template<class Range>
+auto as_rvalue_view(Range &&range) {
+    return std::views::transform(std::forward<Range>(range), [](auto &val) { return std::move(val); });
 }
 
 void setup_css_providers() {
@@ -112,11 +98,11 @@ int main(int argc, [[maybe_unused]] char **argv) {
         });
         window->signal_query_changed().connect([window, &history](std::string_view str) {
             auto results = query_plugins(str, history);
-            window->set_entries(results);
+            window->set_entries(as_rvalue_view(std::move(results)));
         });
         {
             auto results = query_plugins(std::string(""), history);
-            window->set_entries(results);
+            window->set_entries(as_rvalue_view(std::move(results)));
         }
         app->signal_window_removed().connect([](Gtk::Window *window) { delete window; });
 
