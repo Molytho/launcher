@@ -31,6 +31,7 @@ sources = [
     'src/provider_repository.cpp',
     'src/config.cpp',
     'src/history.cpp',
+    'src/macros.cpp',
     'src/ui/list_item.cpp',
     'src/ui/main_window.cpp',
     'src/ui/main_window_x11.cpp',
