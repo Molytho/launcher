@@ -1,6 +1,10 @@
 #include "providers/desktop-entries/provider.h"
 
+#include <boost/regex.hpp>
+
+#include "macros.h"
 #include "utils/fuzzy_matcher.h"
+#include "utils/spawn_helper.h"
 
 namespace {
     std::vector<Glib::RefPtr<Gio::AppInfo>> get_available_apps() {
@@ -8,6 +12,24 @@ namespace {
         std::vector<Glib::RefPtr<Gio::AppInfo>> result = Gio::AppInfo::get_all();
         std::erase_if(result, [](const auto &app_info) { return !app_info->should_show(); });
         return result;
+    }
+
+    std::string prepare_command_line(const Gio::AppInfo &app_info) {
+        static const boost::regex ignored_keys {"(?<!%)((?:%%)*)%[fFuU]"};
+        static const boost::regex percent_re {"%%"};
+        static const boost::regex uneven_percents_re {"(?<!%)(?:%%)*%(?!%)"};
+        // TODO: Some are unsupported
+        static const boost::regex unsupported_re {"(?<!%)((?:%%)*)%[ik]"};
+        static const boost::regex name_re {"(?<!%)((?:%%)*)%c"};
+        auto cmdline = app_info.get_commandline();
+        cmdline      = boost::regex_replace(std::move(cmdline), ignored_keys, "$1");
+        cmdline      = boost::regex_replace(std::move(cmdline), unsupported_re, "$1");
+        cmdline      = boost::regex_replace(std::move(cmdline), name_re, app_info.get_display_name());
+        if (boost::regex_search(cmdline, uneven_percents_re)) {
+            throw std::runtime_error("Invalid desktop file Exec entry");
+        }
+        cmdline = boost::regex_replace(std::move(cmdline), percent_re, "%");
+        return cmdline;
     }
 } // namespace
 
@@ -21,7 +43,18 @@ namespace launcher::provider::desktop_entries {
                 m_app_info(std::move(app_info)),
                 m_icon_string(m_app_info->get_icon() ? m_app_info->get_icon()->to_string() : std::string()) {}
 
-        void execute() const final { m_app_info->launch(std::vector<Glib::RefPtr<Gio::File>> {}); }
+        void execute() const final {
+            auto id = m_app_info->get_id();
+            r_assert(id.ends_with(".desktop"));
+            id.resize(id.size() - 8);
+
+            spawn_context context {};
+            context.executable = "/bin/sh";
+            context.arguments  = {"-c", prepare_command_line(*m_app_info)};
+            context.unit_name  = "app-" + id + "-" + make_unique_identifier();
+            context.slice      = "app-" + id + ".slice";
+            spawn_as_service(context);
+        }
 
         [[nodiscard]] virtual std::string_view get_title() const noexcept override {
             return g_app_info_get_display_name(m_app_info->gobj());

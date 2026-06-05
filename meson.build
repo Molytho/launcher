@@ -18,7 +18,7 @@ ui_resource = gnome.compile_resources(
 )
 
 dependencies = [
-    dependency('boost', modules: ['program_options']),
+    dependency('boost', modules: ['program_options', 'regex']),
     dependency('gtkmm-4.0'),
     dependency('giomm-2.68'),
     dependency('gtk4-layer-shell-0'),
