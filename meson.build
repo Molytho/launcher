@@ -20,7 +20,10 @@ ui_resource = gnome.compile_resources(
 dependencies = [
     dependency('boost', modules: ['program_options']),
     dependency('gtkmm-4.0'),
-    dependency('giomm-2.68')
+    dependency('giomm-2.68'),
+    dependency('gtk4-layer-shell-0'),
+    dependency('gtk4-x11'),
+    dependency('x11')
 ]
 
 sources = [
@@ -30,6 +33,8 @@ sources = [
     'src/history.cpp',
     'src/ui/list_item.cpp',
     'src/ui/main_window.cpp',
+    'src/ui/main_window_x11.cpp',
+    'src/ui/main_window_wayland.cpp',
     'src/utils/fuzzy_matcher.cpp',
     'src/utils/xdg_base_directory.cpp',
     'src/providers/desktop-entries/provider.cpp',

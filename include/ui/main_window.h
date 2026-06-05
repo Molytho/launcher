@@ -23,6 +23,8 @@ namespace launcher::ui {
         void emit_entry_selected(Gtk::ListBoxRow *row);
         void emit_query_changed() const;
 
+        void on_realize() override;
+
         bool entry_has_focus() const noexcept;
 
     public:

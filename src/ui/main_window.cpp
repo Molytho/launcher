@@ -4,6 +4,54 @@
 
 #include "macros.h"
 
+#ifdef GDK_WINDOWING_WAYLAND
+# include <gdk/wayland/gdkwayland.h>
+
+void platform_setup_wayland(Gtk::Window &window);
+
+bool is_wayland_display(Gdk::Display *display) {
+    return GDK_IS_WAYLAND_DISPLAY(display->gobj());
+}
+#else
+[[maybe_unused]] void platform_setup_wayland(Gtk::Window &) {}
+
+bool is_wayland_display(Gdk::Display *) {
+    return false;
+}
+#endif
+
+#ifdef GDK_WINDOWING_X11
+# include <gdk/x11/gdkx.h>
+
+void platform_setup_x11(Gtk::Window &window);
+
+bool is_x11_display(Gdk::Display *display) {
+    return GDK_IS_X11_DISPLAY(display->gobj());
+}
+#else
+[[maybe_unused]] void platform_setup_x11(Gtk::Window &) {}
+
+bool is_x11_display(Gdk::Display *) {
+    return false;
+}
+#endif
+
+namespace {
+    void platform_setup(launcher::ui::MainWindow &window) {
+        if (getenv("LAUNCHER_NO_PLATFORM_SETUP") != nullptr) {
+            return;
+        }
+        if (is_wayland_display(window.get_display().get())) {
+            platform_setup_wayland(window);
+        } else if (is_x11_display(window.get_display().get())) {
+            platform_setup_x11(window);
+        } else {
+            std::cerr << "Invalid gdk platform\n";
+            exit(254);
+        }
+    }
+} // namespace
+
 namespace launcher::ui {
     MainWindow::MainWindow(
         GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options) :
@@ -22,6 +70,11 @@ namespace launcher::ui {
             key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &MainWindow::on_key_pressed), false);
             return key_controller;
         }());
+    }
+
+    void MainWindow::on_realize() {
+        Gtk::Window::on_realize();
+        platform_setup(*this);
     }
 
     bool MainWindow::entry_has_focus() const noexcept {

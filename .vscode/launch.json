@@ -7,7 +7,7 @@
             "name": "Launch launcher",
             "program": "${workspaceFolder}/build/launcher",
             "console": "integratedTerminal",
-            "args": [],
+            "env": ["LAUNCHER_NO_PLATFORM_SETUP=1"],
             "cwd": "${workspaceFolder}/build/",
             "preLaunchTask": "Build"
         }
