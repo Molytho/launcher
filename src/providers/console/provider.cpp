@@ -1,19 +1,14 @@
 #include "providers/console/provider.h"
 
-#include <array>
-#include <cstdio>
-
 #include <spawn.h>
 #include <unistd.h>
 
-#include "macros.h"
+#include "utils/spawn_helper.h"
 
 namespace {
     constexpr launcher::interfaces::Score EntryScore = 1000;
 
-    constexpr size_t MaxCommandSize   = 100;
-    constexpr char ExecFormatString[] = "/usr/bin/alacritty -e sh -c \"%s\"";
-    constexpr std::string_view Icon   = "Alacritty";
+    constexpr std::string_view Icon = "Alacritty";
 } // namespace
 
 namespace launcher::provider::console {
@@ -24,17 +19,12 @@ namespace launcher::provider::console {
         ConsoleEntry() = default;
 
         void execute() const final {
-            std::array<char, MaxCommandSize + sizeof(ExecFormatString)> arg_buffer {};
-            int res = snprintf(arg_buffer.data(), arg_buffer.size(), ExecFormatString, m_command.c_str());
-            if (res < 0 || size_t(res) >= arg_buffer.size()) {
-                throw std::runtime_error("Failed to make exec string");
-            }
-            pid_t pid {0};
-            char path[]                = "/bin/sh";
-            char first_arg[]           = "-c";
-            std::array<char *, 4> argv = {path, first_arg, arg_buffer.data(), nullptr};
-            res = posix_spawn(&pid, "/bin/sh", nullptr, nullptr, argv.data(), environ);
-            r_assert(res >= 0);
+            spawn_context context {};
+            context.executable = "/usr/bin/alacritty";
+            context.arguments  = {"-e", "sh", "-c", m_command};
+            context.unit_name  = "command-" + make_unique_identifier();
+            context.slice      = "app.slice";
+            spawn_as_service(context);
         }
 
         [[nodiscard]] virtual std::string_view get_title() const noexcept override {
