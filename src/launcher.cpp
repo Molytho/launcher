@@ -31,18 +31,31 @@ std::ostream &operator<<(std::ostream &os, const std::shared_ptr<T> &ptr) {
     }
 }
 
+std::vector<std::pair<char, interfaces::Query>> make_queries(std::string_view query) {
+    if (query.empty()) {
+        return {
+            {0, {query}}
+        };
+    } else {
+        return {
+            {0,           {query}          },
+            {query.at(0), {query.substr(1)}}
+        };
+    }
+}
+
 std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
-    std::string p_query, const history_provider &history_provider) {
+    std::string query, const history_provider &history_provider) {
     const ProviderRepository &repo = ProviderRepository::get_instance();
 
-    interfaces::Query query {p_query};
-
     std::vector<std::shared_ptr<interfaces::Entry>> result {};
-    for (const auto &provider : repo.get_active_providers()) {
-        auto provider_result = provider->query(query);
-        result.insert(result.cend(),
-            std::make_move_iterator(provider_result.begin()),
-            std::make_move_iterator(provider_result.end()));
+    for (const auto &[activation_char, query] : make_queries(query)) {
+        for (const auto &provider : repo.get_active_providers(activation_char)) {
+            auto provider_result = provider->query(query);
+            result.insert(result.cend(),
+                std::make_move_iterator(provider_result.begin()),
+                std::make_move_iterator(provider_result.end()));
+        }
     }
 
     history_provider.boost_history_entries(result);
@@ -81,6 +94,7 @@ int main(int argc, [[maybe_unused]] char **argv) {
     }
 
     options options {argc, argv};
+    ProviderRepository::init(options);
     history_provider history {options};
 
     auto app = Gtk::Application::create(PROJECT_NAME);

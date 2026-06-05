@@ -13,10 +13,10 @@ namespace launcher {
         using Score = int64_t;
 
         class Query {
-            std::string m_query;
+            std::string_view m_query;
 
         public:
-            constexpr Query(std::string query) noexcept : m_query(std::move(query)) {}
+            constexpr Query(std::string_view query) noexcept : m_query(query) {}
 
             [[nodiscard]] constexpr std::string_view get_query() const noexcept { return m_query; }
         };
@@ -41,10 +41,10 @@ namespace launcher {
 
             [[nodiscard]] virtual std::string_view get_subtitle() const noexcept = 0;
 
-            // Rework this interface
+            // TODO: Rework this interface
             [[nodiscard]] virtual std::string_view get_icon() const noexcept = 0;
 
-            [[nodiscard]] virtual std::string_view get_id() const noexcept = 0;
+            [[nodiscard]] virtual std::string get_id() const noexcept = 0;
 
             [[nodiscard]] Score get_score() const noexcept { return m_score; }
         };

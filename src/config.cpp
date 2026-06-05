@@ -14,6 +14,8 @@ namespace {
     constexpr char OptionWidth[]    = "width";
     constexpr char OptionIconSize[] = "icon-size";
 
+    constexpr char OptionProviderConfig[] = "providers";
+
     constexpr char OptionHistoryMaxSize[] = "history.max-size";
     constexpr char OptionHistoryBoost[]   = "history.boost";
     constexpr char OptionHistoryDecay[]   = "history.decay";
@@ -22,6 +24,13 @@ namespace {
         auto path = launcher::get_config_dir();
         path.append("config");
         return path;
+    }
+
+    std::vector<launcher::provider_config> make_default_provider_config() {
+        return {
+            {"DesktopEntry", 0  },
+            {"Console",      '>'}
+        };
     }
 } // namespace
 
@@ -34,6 +43,30 @@ namespace launcher {
         return xdg::base_directory::get_state_home().append(PROJECT_NAME);
     }
 
+    std::istream &operator>>(std::istream &is, provider_config &out) {
+        auto skip_spaces = [&is]() {
+            while (!is.eof() && is.peek() == ' ') {
+                is.get();
+            }
+        };
+
+        std::string name;
+        char activation_char = 0;
+        is >> name;
+        if (is.fail() || is.bad()) {
+            throw std::runtime_error("Failed to parse provider_config");
+        }
+
+        skip_spaces();
+        if (!is.eof()) {
+            activation_char = is.get();
+        }
+        skip_spaces();
+
+        out = {std::move(name), activation_char};
+        return is;
+    }
+
     po::options_description options::make_options() {
         po::options_description options {};
         // clang-format off
@@ -41,6 +74,7 @@ namespace launcher {
             (OptionHeight, po::value<int>()->default_value(600))
             (OptionWidth, po::value<int>()->default_value(1300))
             (OptionIconSize, po::value<int>()->default_value(64))
+            (OptionProviderConfig, po::value<std::vector<provider_config>>())
             (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
             (OptionHistoryBoost, po::value<interfaces::Score>()->default_value(10))
             (OptionHistoryDecay, po::value<double>());
@@ -91,4 +125,15 @@ namespace launcher {
             return static_cast<double>(get_history_boost()) / get_history_max_size();
         }
     }
+
+    const std::vector<provider_config> &options::get_provider_config() const noexcept {
+        auto it = m_results.find(OptionProviderConfig);
+        if (it != m_results.end()) {
+            return (*it).second.as<std::vector<provider_config>>();
+        } else {
+            static auto default_value = make_default_provider_config();
+            return default_value;
+        }
+    }
+
 } // namespace launcher

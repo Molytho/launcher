@@ -33,6 +33,7 @@ sources = [
     'src/utils/fuzzy_matcher.cpp',
     'src/utils/xdg_base_directory.cpp',
     'src/providers/desktop-entries/provider.cpp',
+    'src/providers/console/provider.cpp',
     ui_resource
 ]
 

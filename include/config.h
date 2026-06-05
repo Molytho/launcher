@@ -2,6 +2,7 @@
 #define LAUNCHER_CONFIG_H
 
 #include <filesystem>
+#include <iostream>
 
 #include <boost/program_options.hpp>
 
@@ -10,6 +11,13 @@
 namespace launcher {
     std::filesystem::path get_config_dir();
     std::filesystem::path get_state_dir();
+
+    struct provider_config {
+        std::string name;
+        char activation_token;
+    };
+
+    std::istream &operator>>(std::istream &is, provider_config &out);
 
     class options {
         boost::program_options::variables_map m_results;
@@ -27,6 +35,8 @@ namespace launcher {
         size_t get_history_max_size() const noexcept;
         interfaces::Score get_history_boost() const noexcept;
         double get_history_decay() const noexcept;
+
+        const std::vector<provider_config> &get_provider_config() const noexcept;
     };
 } // namespace launcher
 

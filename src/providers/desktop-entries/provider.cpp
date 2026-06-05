@@ -36,9 +36,7 @@ namespace launcher::provider::desktop_entries {
             return m_icon_string;
         }
 
-        [[nodiscard]] std::string_view get_id() const noexcept override {
-            return g_app_info_get_id(m_app_info->gobj());
-        }
+        [[nodiscard]] std::string get_id() const noexcept override { return m_app_info->get_id(); }
 
         using interfaces::Entry::set_score;
     };
