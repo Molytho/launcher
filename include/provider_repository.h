@@ -16,7 +16,7 @@ namespace launcher {
 
 
     public:
-        provider_repository(const options &options);
+        provider_repository(const options &options = options::get_instance());
 
         std::vector<std::shared_ptr<interfaces::Provider>> get_active_providers(char activation_char = 0) const;
     };

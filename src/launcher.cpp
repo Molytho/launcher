@@ -26,7 +26,7 @@ std::vector<std::pair<char, interfaces::Query>> make_queries(std::string_view qu
 }
 
 std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
-    std::string query, const history_provider &history_provider) {
+    std::string query, const history_provider &history_provider = history_provider::get_instance()) {
     const provider_repository &repo = provider_repository::get_instance();
 
     std::vector<std::shared_ptr<interfaces::Entry>> result {};
@@ -47,8 +47,8 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
     return result;
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
-    std::string_view p_query, const history_provider &history_provider) {
+std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p_query,
+    const history_provider &history_provider = history_provider::get_instance()) {
     return query_plugins(std::string(p_query), history_provider);
 }
 
@@ -80,9 +80,8 @@ int main(int argc, [[maybe_unused]] char **argv) {
     }
 
     options::init(argc, argv);
-    auto &options = options::get_instance();
-    provider_repository::init(options);
-    history_provider history {options};
+    provider_repository::init();
+    history_provider::init();
 
     auto app = Gtk::Application::create(PROJECT_NAME);
     app->signal_activate().connect([&]() {
@@ -90,23 +89,24 @@ int main(int argc, [[maybe_unused]] char **argv) {
 
         auto builder = Gtk::Builder::create_from_resource("/Launcher/Launcher.ui");
         r_assert(builder);
-        auto window = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher", options);
+        auto window = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher");
         r_assert(window);
-        window->signal_entry_selected().connect([&history](auto entry_ptr) {
+        window->signal_entry_selected().connect([](auto entry_ptr) {
             r_assert(entry_ptr);
-            history.add_to_history(*entry_ptr);
+            history_provider::get_instance().add_to_history(*entry_ptr);
             entry_ptr->execute();
         });
-        window->signal_query_changed().connect([window, &history](std::string_view str) {
-            auto results = query_plugins(str, history);
+        window->signal_query_changed().connect([window](std::string_view str) {
+            auto results = query_plugins(str);
             window->set_entries(as_rvalue_view(std::move(results)));
         });
         {
-            auto results = query_plugins(std::string(""), history);
+            auto results = query_plugins(std::string(""));
             window->set_entries(as_rvalue_view(std::move(results)));
         }
         app->signal_window_removed().connect([](Gtk::Window *window) { delete window; });
 
+        const auto &options = options::get_instance();
         window->set_default_size(options.get_width(), options.get_height());
 
         app->add_window(*window);

@@ -4,7 +4,6 @@
 #include <gtkmm.h>
 
 #include <ranges>
-#include <span>
 
 #include "config.h"
 #include "model/module_interfaces.h"
@@ -30,7 +29,7 @@ namespace launcher::ui {
         bool entry_has_focus() const noexcept;
 
     public:
-        MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options);
+        MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options = options::get_instance());
 
         template<class It>
         void set_entries(It begin, It end) {
