@@ -1,19 +1,13 @@
 #include "providers/desktop-entries/provider.h"
 
 #include <boost/regex.hpp>
+#include <ranges>
 
 #include "macros.h"
 #include "utils/fuzzy_matcher.h"
 #include "utils/spawn_helper.h"
 
 namespace {
-    std::vector<Glib::RefPtr<Gio::AppInfo>> get_available_apps() {
-        Gio::init();
-        std::vector<Glib::RefPtr<Gio::AppInfo>> result = Gio::AppInfo::get_all();
-        std::erase_if(result, [](const auto &app_info) { return !app_info->should_show(); });
-        return result;
-    }
-
     std::string prepare_command_line(const Gio::AppInfo &app_info) {
         static const boost::regex ignored_keys {"(?<!%)((?:%%)*)%[fFuU]"};
         static const boost::regex percent_re {"%%"};
@@ -38,8 +32,7 @@ namespace launcher::provider::desktop_entries {
         Glib::RefPtr<Gio::AppInfo> m_app_info;
 
     public:
-        DesktopFileEntry(Glib::RefPtr<Gio::AppInfo> app_info) :
-                m_app_info(std::move(app_info)) {}
+        DesktopFileEntry(Glib::RefPtr<Gio::AppInfo> app_info) : m_app_info(std::move(app_info)) {}
 
         void execute() const final {
             auto id = m_app_info->get_id();
@@ -55,44 +48,48 @@ namespace launcher::provider::desktop_entries {
             spawn_as_service(context);
         }
 
-        [[nodiscard]] virtual std::string_view get_title() const noexcept override {
+        [[nodiscard]] virtual std::string_view get_title() const noexcept final {
             return g_app_info_get_display_name(m_app_info->gobj());
         }
 
-        [[nodiscard]] virtual std::string_view get_subtitle() const noexcept override {
+        [[nodiscard]] virtual std::string_view get_subtitle() const noexcept final {
             auto desc = g_app_info_get_description(m_app_info->gobj());
             return desc ? desc : "";
         }
 
-        [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept override {
+        [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept final {
             return m_app_info->get_icon();
         }
 
-        [[nodiscard]] std::string get_id() const noexcept override { return m_app_info->get_id(); }
+        [[nodiscard]] std::string get_id() const noexcept final { return m_app_info->get_id(); }
 
         using interfaces::Entry::set_score;
     };
 } // namespace launcher::provider::desktop_entries
 
+namespace {
+    std::vector<std::shared_ptr<launcher::provider::desktop_entries::DesktopFileEntry>> make_available_entries() {
+        Gio::init();
+        auto view = std::views::filter(Gio::AppInfo::get_all(), [](const auto &app_info) {
+            return app_info->should_show();
+        }) | std::views::transform([](auto &app_info) {
+            return std::make_shared<launcher::provider::desktop_entries::DesktopFileEntry>(std::move(app_info));
+        });
+        return {std::move_iterator(view.begin()), std::move_iterator(view.end())};
+    }
+} // namespace
+
 namespace launcher::providers {
     DesktopEntryProvider::DesktopEntryProvider() :
-            interfaces::Provider(), m_available_applications(get_available_apps()) {}
+            interfaces::Provider(), m_available_entries(make_available_entries()) {}
 
     std::vector<std::shared_ptr<interfaces::Entry>> DesktopEntryProvider::query(
         const interfaces::Query &query) const {
-        std::vector<std::shared_ptr<interfaces::Entry>> result {};
-        result.reserve(m_available_applications.size());
-        std::ranges::transform(m_available_applications,
-            std::back_inserter(result),
-            [&](const auto &app_info) -> std::shared_ptr<interfaces::Entry> {
-                return std::make_shared<provider::desktop_entries::DesktopFileEntry>(app_info);
-            });
-
-        for (auto &result_entry : result) {
-            auto &desktop_file_entry = static_cast<provider::desktop_entries::DesktopFileEntry &>(*result_entry);
-            auto match_result = utils::fuzzy_match(query.get_query(), desktop_file_entry.get_title());
-            desktop_file_entry.set_score(match_result.score);
-        }
-        return result;
+        auto view = std::views::transform(m_available_entries, [&query](const auto &entry) {
+            auto match_result = utils::fuzzy_match(query.get_query(), entry->get_title());
+            entry->set_score(match_result.score);
+            return std::shared_ptr<interfaces::Entry>(entry);
+        });
+        return {std::move_iterator(view.begin()), std::move_iterator(view.end())};
     }
 } // namespace launcher::providers

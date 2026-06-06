@@ -5,9 +5,13 @@
 
 #include "model/module_interfaces.h"
 
+namespace launcher::provider::desktop_entries {
+    class DesktopFileEntry;
+}
+
 namespace launcher::providers {
     class DesktopEntryProvider : public interfaces::Provider {
-        std::vector<Glib::RefPtr<Gio::AppInfo>> m_available_applications;
+        std::vector<std::shared_ptr<provider::desktop_entries::DesktopFileEntry>> m_available_entries;
 
     public:
         DesktopEntryProvider();

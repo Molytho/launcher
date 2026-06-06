@@ -34,8 +34,8 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
         for (const auto &provider : repo.get_active_providers(activation_char)) {
             auto provider_result = provider->query(query);
             result.insert(result.cend(),
-                std::make_move_iterator(provider_result.begin()),
-                std::make_move_iterator(provider_result.end()));
+                std::move_iterator(provider_result.begin()),
+                std::move_iterator(provider_result.end()));
         }
     }
 
