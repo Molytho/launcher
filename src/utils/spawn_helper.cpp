@@ -1,5 +1,8 @@
 #include "utils/spawn_helper.h"
 
+#include <array>
+#include <cctype>
+#include <charconv>
 #include <spawn.h>
 #include <sstream>
 #include <sys/stat.h>
@@ -7,15 +10,42 @@
 #include <system_error>
 #include <unistd.h>
 
+#include "config.h"
 #include "macros.h"
 #include "utils/owned_fd.h"
-#include "config.h"
 
 namespace {
     constexpr char SliceFormatString[] = "--property=Slice=%s";
-}
+} // namespace
 
 namespace launcher {
+    std::string escape_systemd_string(std::string_view str, bool start_of_string) {
+        if (str.empty()) {
+            return {};
+        }
+
+        std::string result;
+        result.reserve(str.size());
+        // Dot at first position needs to be escaped
+        if (start_of_string && str.at(0) == '.') {
+            result.append("\\x2e");
+            str = str.substr(1);
+        }
+        for (char c : str) {
+            if (std::isalnum(c) || c == ':' || c == '_' || c == '.') {
+                result.push_back(c);
+            } else if (c == '/') {
+                result.push_back('-');
+            } else {
+                result.append("\\x");
+                std::array<char, 3> buffer {0, 0, 0};
+                std::to_chars(buffer.data(), buffer.data() + 2, (unsigned char)(c), 16);
+                result.append(buffer.data());
+            }
+        }
+        return result;
+    }
+
     void spawn_as_service(spawn_context &context) {
         r_assert(!context.executable.empty());
         r_assert(!context.unit_name.empty());

@@ -47,6 +47,7 @@ namespace launcher::provider::desktop_entries {
             auto id = m_app_info->get_id();
             r_assert(id.ends_with(".desktop"));
             id.resize(id.size() - 8);
+            id = escape_systemd_string(id, false);
 
             spawn_context context {};
             context.executable = "/bin/sh";

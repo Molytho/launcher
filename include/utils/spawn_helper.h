@@ -4,6 +4,8 @@
 # include <vector>
 
 namespace launcher {
+    std::string escape_systemd_string(std::string_view str, bool start_of_string = true);
+
     struct spawn_context {
         std::string executable;
         std::vector<std::string> arguments;
