@@ -5,18 +5,30 @@
 
 #include <ranges>
 
-#include "config.h"
 #include "model/module_interfaces.h"
-#include "ui/list_item.h"
 
 namespace launcher::ui {
+    class ListModelEntry : public Glib::Object {
+        std::shared_ptr<interfaces::Entry> m_entry;
+
+        ListModelEntry(std::shared_ptr<interfaces::Entry> e);
+
+    public:
+        std::shared_ptr<interfaces::Entry> get_entry() { return m_entry; }
+
+        using Glib::Object::get_base_type;
+        using Glib::Object::get_type;
+
+        static Glib::RefPtr<ListModelEntry> create(std::shared_ptr<interfaces::Entry> e);
+    };
+
     class MainWindow : public Gtk::Window {
         Glib::RefPtr<Gtk::Entry> m_entry;
         Glib::RefPtr<Gtk::ScrolledWindow> m_scroll;
         Glib::RefPtr<Gtk::ListBox> m_listbox;
+        Glib::RefPtr<Gio::ListStore<ListModelEntry>> m_model;
         sigc::signal<void(const std::shared_ptr<interfaces::Entry> &)> m_signal_entry_selected {};
         sigc::signal<void(std::string_view)> m_signal_query_changed {};
-        const options &m_options;
 
         void setup_controllers();
         bool on_key_pressed(guint keyval, guint, Gdk::ModifierType);
@@ -29,25 +41,21 @@ namespace launcher::ui {
         bool entry_has_focus() const noexcept;
 
     public:
-        MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options = options::get_instance());
+        MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder);
 
-        template<class It>
-        void set_entries(It begin, It end) {
-            m_listbox->remove_all();
-            for (auto entry : std::ranges::subrange(begin, end)) {
-                auto list_item = Gtk::make_managed<ListItem>(std::move(entry), m_options.get_icon_size());
-                r_assert(list_item);
-                m_listbox->append(*list_item);
-            }
+        template<std::ranges::input_range Range>
+        void set_entries(Range &&range) {
+            std::vector<Glib::RefPtr<ListModelEntry>> additions = [&]() {
+                auto view = std::views::transform(range,
+                    [](auto &entry) { return ListModelEntry::create(std::move(entry)); });
+                return std::vector<Glib::RefPtr<ListModelEntry>> {std::move_iterator(view.begin()),
+                    std::move_iterator(view.end())};
+            }();
+            m_model->splice(0, m_model->get_n_items(), additions);
             if (auto first_row = m_listbox->get_row_at_index(0); first_row) {
                 m_scroll->get_vadjustment()->set_value(0);
                 m_listbox->select_row(*first_row);
             }
-        }
-
-        template<std::ranges::input_range Range>
-        void set_entries(Range &&range) {
-            set_entries(std::ranges::begin(range), std::ranges::end(range));
         }
 
         sigc::signal<void(const std::shared_ptr<interfaces::Entry> &)> signal_entry_selected() const noexcept {

@@ -1,8 +1,8 @@
 #include "ui/main_window.h"
 
-#include "ui/list_item.h"
-
+#include "config.h"
 #include "macros.h"
+#include "ui/list_item.h"
 
 #ifdef GDK_WINDOWING_WAYLAND
 # include <gdk/wayland/gdkwayland.h>
@@ -50,17 +50,33 @@ namespace {
             exit(254);
         }
     }
+
+    Gtk::Widget *create_widget(const Glib::RefPtr<Glib::Object> &obj) {
+        r_assert(obj);
+        auto model_entry = std::dynamic_pointer_cast<launcher::ui::ListModelEntry>(obj);
+        return new launcher::ui::ListItem(model_entry->get_entry(),
+            launcher::options::get_instance().get_icon_size());
+    }
 } // namespace
 
 namespace launcher::ui {
-    MainWindow::MainWindow(
-        GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder, const options &options) :
+    ListModelEntry::ListModelEntry(std::shared_ptr<interfaces::Entry> e) :
+            ObjectBase("EntryListItem"), m_entry(std::move(e)) {}
+
+    Glib::RefPtr<ListModelEntry> ListModelEntry::create(std::shared_ptr<interfaces::Entry> e) {
+        return Glib::make_refptr_for_instance(new ListModelEntry(std::move(e)));
+    }
+
+    MainWindow::MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder) :
             Gtk::Window(base_object), m_entry(builder->get_widget<Gtk::Entry>("search")),
             m_scroll(builder->get_widget<Gtk::ScrolledWindow>("scroll")),
-            m_listbox(builder->get_widget<Gtk::ListBox>("app-list")), m_options(options) {
+            m_listbox(builder->get_widget<Gtk::ListBox>("app-list")),
+            m_model(Gio::ListStore<ListModelEntry>::create()) {
         m_entry->property_text().signal_changed().connect(sigc::mem_fun(*this, &MainWindow::emit_query_changed));
         m_listbox->signal_row_activated().connect(sigc::mem_fun(*this, &MainWindow::emit_entry_selected));
         setup_controllers();
+
+        m_listbox->bind_model(m_model, sigc::ptr_fun(create_widget));
     }
 
     void MainWindow::setup_controllers() {

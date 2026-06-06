@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <iostream>
-#include <ranges>
 
 #include <gtkmm.h>
 
@@ -52,11 +51,6 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p
     return query_plugins(std::string(p_query), history_provider);
 }
 
-template<class Range>
-auto as_rvalue_view(Range &&range) {
-    return std::views::transform(std::forward<Range>(range), [](auto &val) { return std::move(val); });
-}
-
 void setup_css_providers() {
     {
         auto css_provider = Gtk::CssProvider::create();
@@ -98,11 +92,11 @@ int main(int argc, [[maybe_unused]] char **argv) {
         });
         window->signal_query_changed().connect([window](std::string_view str) {
             auto results = query_plugins(str);
-            window->set_entries(as_rvalue_view(std::move(results)));
+            window->set_entries(std::move(results));
         });
         {
             auto results = query_plugins(std::string(""));
-            window->set_entries(as_rvalue_view(std::move(results)));
+            window->set_entries(std::move(results));
         }
         app->signal_window_removed().connect([](Gtk::Window *window) { delete window; });
 
