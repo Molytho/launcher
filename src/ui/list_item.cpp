@@ -76,12 +76,16 @@ namespace launcher::ui {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, std::string_view>) {
                     return Gio::Icon::create(std::string(arg));
+                } else if constexpr (std::is_same_v<T, Glib::RefPtr<Gio::Icon>>) {
+                    return std::move(arg);
                 } else {
                     static_assert(false, "non-exhaustive visitor!");
                 }
             },
-            str);
-        gtk_image_set_from_gicon(image, icon->gobj());
+            std::move(str));
+        if (icon) {
+            gtk_image_set_from_gicon(image, icon->gobj());
+        }
     }
 
     void ListItem::set_title(std::string_view str) {

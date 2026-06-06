@@ -36,12 +36,10 @@ namespace {
 namespace launcher::provider::desktop_entries {
     class DesktopFileEntry : public interfaces::Entry {
         Glib::RefPtr<Gio::AppInfo> m_app_info;
-        std::string m_icon_string;
 
     public:
         DesktopFileEntry(Glib::RefPtr<Gio::AppInfo> app_info) :
-                m_app_info(std::move(app_info)),
-                m_icon_string(m_app_info->get_icon() ? m_app_info->get_icon()->to_string() : std::string()) {}
+                m_app_info(std::move(app_info)) {}
 
         void execute() const final {
             auto id = m_app_info->get_id();
@@ -67,7 +65,7 @@ namespace launcher::provider::desktop_entries {
         }
 
         [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept override {
-            return m_icon_string;
+            return m_app_info->get_icon();
         }
 
         [[nodiscard]] std::string get_id() const noexcept override { return m_app_info->get_id(); }

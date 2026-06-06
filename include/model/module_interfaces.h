@@ -1,6 +1,7 @@
 #ifndef LAUNCHER_ENTRY_H
 #define LAUNCHER_ENTRY_H
 
+#include <giomm.h>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -22,7 +23,7 @@ namespace launcher {
             [[nodiscard]] constexpr std::string_view get_query() const noexcept { return m_query; }
         };
 
-        using IconVariant = std::variant<std::string_view>;
+        using IconVariant = std::variant<std::string_view, Glib::RefPtr<Gio::Icon>>;
 
         class Entry {
         private:
