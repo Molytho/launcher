@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace launcher {
@@ -20,6 +21,8 @@ namespace launcher {
 
             [[nodiscard]] constexpr std::string_view get_query() const noexcept { return m_query; }
         };
+
+        using IconVariant = std::variant<std::string_view>;
 
         class Entry {
         private:
@@ -41,8 +44,7 @@ namespace launcher {
 
             [[nodiscard]] virtual std::string_view get_subtitle() const noexcept = 0;
 
-            // TODO: Rework this interface
-            [[nodiscard]] virtual std::string_view get_icon() const noexcept = 0;
+            [[nodiscard]] virtual IconVariant get_icon() const noexcept = 0;
 
             [[nodiscard]] virtual std::string get_id() const noexcept = 0;
 

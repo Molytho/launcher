@@ -21,11 +21,11 @@ namespace launcher::ui {
 
         void set_title(std::string str);
         void set_subtitle(std::string str);
-        void set_icon(std::string str);
 
         void set_title(std::string_view str);
         void set_subtitle(std::string_view str);
-        void set_icon(std::string_view str);
+
+        void set_icon(interfaces::IconVariant str);
 
         std::shared_ptr<interfaces::Entry> get_entry() const { return m_entry; }
     };

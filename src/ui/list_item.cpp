@@ -67,11 +67,20 @@ namespace launcher::ui {
         gtk_label_set_label(label, str.c_str());
     }
 
-    void ListItem::set_icon(std::string str) {
+    void ListItem::set_icon(interfaces::IconVariant str) {
         auto image = GTK_IMAGE(
             gtk_widget_get_template_child(GTK_WIDGET(gobj()), G_TYPE_FROM_INSTANCE(gobj()), "Icon"));
         r_assert(image);
-        auto icon = Gio::Icon::create(str);
+        auto icon = std::visit(
+            [](auto &&arg) -> Glib::RefPtr<Gio::Icon> {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, std::string_view>) {
+                    return Gio::Icon::create(std::string(arg));
+                } else {
+                    static_assert(false, "non-exhaustive visitor!");
+                }
+            },
+            str);
         gtk_image_set_from_gicon(image, icon->gobj());
     }
 
@@ -81,9 +90,5 @@ namespace launcher::ui {
 
     void ListItem::set_subtitle(std::string_view str) {
         return set_subtitle(std::string(str));
-    }
-
-    void ListItem::set_icon(std::string_view str) {
-        return set_icon(std::string(str));
     }
 } // namespace launcher::ui

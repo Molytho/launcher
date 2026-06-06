@@ -36,7 +36,9 @@ namespace launcher::provider::console {
             return m_command;
         }
 
-        [[nodiscard]] virtual std::string_view get_icon() const noexcept override { return Icon; }
+        [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept override {
+            return Icon;
+        }
 
         [[nodiscard]] std::string get_id() const noexcept override {
             return "command_" + m_command;

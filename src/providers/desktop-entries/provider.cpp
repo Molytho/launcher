@@ -24,7 +24,7 @@ namespace {
         auto cmdline = app_info.get_commandline();
         cmdline      = boost::regex_replace(std::move(cmdline), ignored_keys, "$1");
         cmdline      = boost::regex_replace(std::move(cmdline), unsupported_re, "$1");
-        cmdline      = boost::regex_replace(std::move(cmdline), name_re, app_info.get_display_name());
+        cmdline = boost::regex_replace(std::move(cmdline), name_re, app_info.get_display_name());
         if (boost::regex_search(cmdline, uneven_percents_re)) {
             throw std::runtime_error("Invalid desktop file Exec entry");
         }
@@ -66,7 +66,7 @@ namespace launcher::provider::desktop_entries {
             return desc ? desc : "";
         }
 
-        [[nodiscard]] virtual std::string_view get_icon() const noexcept override {
+        [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept override {
             return m_icon_string;
         }
 
