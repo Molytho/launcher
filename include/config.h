@@ -37,6 +37,8 @@ namespace launcher {
         interfaces::Score get_history_boost() const noexcept;
         double get_history_decay() const noexcept;
 
+        bool should_spawn_as_service() const noexcept;
+
         const std::vector<provider_config> &get_provider_config() const noexcept;
     };
 } // namespace launcher

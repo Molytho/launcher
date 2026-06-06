@@ -16,6 +16,8 @@ namespace {
 
     constexpr char OptionProviderConfig[] = "providers";
 
+    constexpr char OptionSpawnAsService[] = "spawn.service";
+
     constexpr char OptionHistoryMaxSize[] = "history.max-size";
     constexpr char OptionHistoryBoost[]   = "history.boost";
     constexpr char OptionHistoryDecay[]   = "history.decay";
@@ -75,6 +77,7 @@ namespace launcher {
             (OptionWidth, po::value<int>()->default_value(1300))
             (OptionIconSize, po::value<int>()->default_value(64))
             (OptionProviderConfig, po::value<std::vector<provider_config>>())
+            (OptionSpawnAsService, po::bool_switch()->default_value(false))
             (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
             (OptionHistoryBoost, po::value<interfaces::Score>()->default_value(10))
             (OptionHistoryDecay, po::value<double>());
@@ -124,6 +127,10 @@ namespace launcher {
         } else {
             return static_cast<double>(get_history_boost()) / get_history_max_size();
         }
+    }
+
+    bool options::should_spawn_as_service() const noexcept {
+        return m_results[OptionSpawnAsService].as<bool>();
     }
 
     const std::vector<provider_config> &options::get_provider_config() const noexcept {
