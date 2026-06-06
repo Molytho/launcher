@@ -27,7 +27,7 @@ std::vector<std::pair<char, interfaces::Query>> make_queries(std::string_view qu
 
 std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
     std::string query, const history_provider &history_provider) {
-    const ProviderRepository &repo = ProviderRepository::get_instance();
+    const provider_repository &repo = provider_repository::get_instance();
 
     std::vector<std::shared_ptr<interfaces::Entry>> result {};
     for (const auto &[activation_char, query] : make_queries(query)) {
@@ -79,8 +79,9 @@ int main(int argc, [[maybe_unused]] char **argv) {
         return 1;
     }
 
-    options options {argc, argv};
-    ProviderRepository::init(options);
+    options::init(argc, argv);
+    auto &options = options::get_instance();
+    provider_repository::init(options);
     history_provider history {options};
 
     auto app = Gtk::Application::create(PROJECT_NAME);

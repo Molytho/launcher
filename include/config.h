@@ -7,6 +7,7 @@
 #include <boost/program_options.hpp>
 
 #include "model/module_interfaces.h"
+#include "utils/singleton.h"
 
 namespace launcher {
     std::filesystem::path get_config_dir();
@@ -19,7 +20,7 @@ namespace launcher {
 
     std::istream &operator>>(std::istream &is, provider_config &out);
 
-    class options {
+    class options : public singleton_impl<options> {
         boost::program_options::variables_map m_results;
         boost::program_options::options_description m_config_options;
 

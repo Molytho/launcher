@@ -13,7 +13,7 @@
 namespace I = launcher::interfaces;
 
 namespace {
-    std::optional<launcher::ProviderRepository> instance;
+    std::optional<launcher::provider_repository> instance;
 
     std::shared_ptr<launcher::interfaces::Provider> create_provider_by_name(std::string_view str) {
         if (str == "DesktopEntry") {
@@ -30,20 +30,11 @@ namespace {
 // TODO: Map implementation
 
 namespace launcher {
-    ProviderRepository &ProviderRepository::get_instance() {
-        r_assert(instance);
-        return *instance;
-    }
-
-    void ProviderRepository::init(const options &options) {
-        instance.emplace(options);
-    }
-
-    ProviderRepository::ProviderRepository(const options &options) :
+    provider_repository::provider_repository(const options &options) :
             m_available_providers(make_available_providers(options)) {}
 
     std::vector<std::pair<char, std::shared_ptr<interfaces::Provider>>>
-        ProviderRepository::make_available_providers(const options &options) {
+        provider_repository::make_available_providers(const options &options) {
         auto &provider_config = options.get_provider_config();
         std::vector<std::pair<char, std::shared_ptr<interfaces::Provider>>> results {};
         for (const auto &provider : provider_config) {
@@ -52,7 +43,7 @@ namespace launcher {
         return results;
     }
 
-    std::vector<std::shared_ptr<I::Provider>> ProviderRepository::get_active_providers(char activation_char) const {
+    std::vector<std::shared_ptr<I::Provider>> provider_repository::get_active_providers(char activation_char) const {
         std::vector<std::shared_ptr<I::Provider>> result;
         auto res = std::views::filter(m_available_providers, [activation_char](const auto &provider) {
             return provider.first == activation_char;
