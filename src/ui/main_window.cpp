@@ -50,6 +50,13 @@ namespace {
             exit(254);
         }
     }
+
+    Gtk::Widget *create_widget(const Glib::RefPtr<Glib::Object> &obj) {
+        r_assert(obj);
+        auto model_entry = std::dynamic_pointer_cast<launcher::ui::ListModelEntry>(obj);
+        return new launcher::ui::ListItem(model_entry->get_entry(),
+            launcher::options::get_instance().get_icon_size());
+    }
 } // namespace
 
 namespace launcher::ui {
@@ -69,26 +76,7 @@ namespace launcher::ui {
         m_listbox->signal_row_activated().connect(sigc::mem_fun(*this, &MainWindow::emit_entry_selected));
         setup_controllers();
 
-        m_listbox->bind_model(m_model, sigc::mem_fun(*this, &MainWindow::create_widget));
-    }
-
-    Gtk::Widget *MainWindow::create_widget(const Glib::RefPtr<Glib::Object> &obj) {
-        r_assert(obj);
-        auto &ptr = [&]() -> std::shared_ptr<ListItem> & {
-            auto model_entry = std::dynamic_pointer_cast<launcher::ui::ListModelEntry>(obj);
-            if (m_cache_pos < m_list_item_cache.size()) {
-                auto &ptr = m_list_item_cache.at(m_cache_pos);
-                ptr->reset(model_entry->get_entry());
-                return ptr;
-            } else {
-                m_list_item_cache.emplace_back(ListItem::create(model_entry->get_entry(),
-                    launcher::options::get_instance().get_icon_size()));
-                return m_list_item_cache.back();
-            }
-        }();
-        m_cache_pos++;
-        ptr->reference();
-        return ptr.get();
+        m_listbox->bind_model(m_model, sigc::ptr_fun(create_widget));
     }
 
     void MainWindow::setup_controllers() {

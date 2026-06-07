@@ -6,7 +6,6 @@
 #include <ranges>
 
 #include "model/module_interfaces.h"
-#include "ui/list_item.h"
 
 namespace launcher::ui {
     class ListModelEntry : public Glib::Object {
@@ -31,9 +30,6 @@ namespace launcher::ui {
         sigc::signal<void(const std::shared_ptr<interfaces::Entry> &)> m_signal_entry_selected {};
         sigc::signal<void(std::string_view)> m_signal_query_changed {};
 
-        std::vector<std::shared_ptr<ListItem>> m_list_item_cache {};
-        size_t m_cache_pos {0};
-
         void setup_controllers();
         bool on_key_pressed(guint keyval, guint, Gdk::ModifierType);
 
@@ -44,14 +40,11 @@ namespace launcher::ui {
 
         bool entry_has_focus() const noexcept;
 
-        Gtk::Widget *create_widget(const Glib::RefPtr<Glib::Object> &obj);
-
     public:
         MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder);
 
         template<std::ranges::input_range Range>
         void set_entries(Range &&range) {
-            m_cache_pos = 0;
             std::vector<Glib::RefPtr<ListModelEntry>> additions = [&]() {
                 auto view = std::views::transform(range,
                     [](auto &entry) { return ListModelEntry::create(std::move(entry)); });
