@@ -52,12 +52,15 @@ namespace launcher {
 
         char run_executable[] = "systemd-run";
         char arg1[]           = "--user";
-        char arg_scope[]      = "--scope";
+        char arg_exit_type[]  = "--property=ExitType=cgroup";
+        char arg_type[]       = "--property=Type=exec";
+        char arg_restart[]    = "--property=Restart=no";
         char arg_unit[]       = "-u";
+        char arg_scope[]      = "--scope";
         char arg_end[]        = "--";
         std::string slice {}; // Here because of lifetime
 
-        std::vector<char *> args {run_executable, arg1, arg_unit};
+        std::vector<char *> args {run_executable, arg1, arg_exit_type, arg_type, arg_restart, arg_unit};
         args.push_back(context.unit_name.data());
         if (!options::get_instance().should_spawn_as_service()) {
             args.push_back(arg_scope);
