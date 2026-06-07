@@ -44,12 +44,25 @@ namespace launcher::ui {
         r_assert(image);
         gtk_image_set_pixel_size(image, icon_size);
 
+        reset();
+    }
+
+    ListItem::~ListItem() = default;
+
+    std::shared_ptr<ListItem> ListItem::create(std::shared_ptr<interfaces::Entry> entry, int icon_size) {
+        return std::make_shared<ListItem>(std::move(entry), icon_size);
+    }
+
+    void ListItem::reset(std::shared_ptr<interfaces::Entry> entry) {
+        m_entry = std::move(entry);
+        reset();
+    }
+
+    void ListItem::reset() {
         set_title(m_entry->get_title());
         set_subtitle(m_entry->get_subtitle());
         set_icon(m_entry->get_icon());
     }
-
-    ListItem::~ListItem() = default;
 
     void ListItem::set_title(std::string str) {
         auto label = GTK_LABEL(gtk_widget_get_template_child(GTK_WIDGET(gobj()),

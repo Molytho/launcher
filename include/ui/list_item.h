@@ -15,9 +15,15 @@ namespace launcher::ui {
     class ListItem : public ListItemExtraInit, public Gtk::ListBoxRow {
         std::shared_ptr<interfaces::Entry> m_entry;
 
+        void reset();
+
     public:
         ListItem(std::shared_ptr<interfaces::Entry> entry, int icon_size);
         ~ListItem() override;
+
+        static std::shared_ptr<ListItem> create(std::shared_ptr<interfaces::Entry> entry, int icon_size);
+
+        void reset(std::shared_ptr<interfaces::Entry> entry);
 
         void set_title(std::string str);
         void set_subtitle(std::string str);
