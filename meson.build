@@ -20,10 +20,10 @@ ui_resource = gnome.compile_resources(
 dependencies = [
     dependency('boost', modules: ['program_options', 'regex']),
     dependency('gtkmm-4.0'),
-    dependency('giomm-2.68'),
     dependency('gtk4-layer-shell-0'),
     dependency('gtk4-x11'),
-    dependency('x11')
+    dependency('x11'),
+    dependency('xdgdesktopentry++', fallback : ['xdgdesktopentry++', 'xdgdesktopentry_dep'], default_options: ['default_library=static'])
 ]
 
 sources = [

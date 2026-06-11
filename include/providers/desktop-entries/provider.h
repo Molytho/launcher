@@ -1,8 +1,6 @@
 #ifndef LAUNCHER_DESKTOP_ENTRIES_PROVIDER_H
 #define LAUNCHER_DESKTOP_ENTRIES_PROVIDER_H
 
-#include <giomm.h>
-
 #include "model/module_interfaces.h"
 
 namespace launcher::provider::desktop_entries {

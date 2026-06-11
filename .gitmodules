@@ -1,0 +1,3 @@
+[submodule "subprojects/xdgdesktopentry++"]
+	path = subprojects/xdgdesktopentry++
+	url = https://github.com/Molytho/libxdgdesktopentry.git
