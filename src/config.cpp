@@ -3,9 +3,10 @@
 #include <filesystem>
 #include <iostream>
 
+#include <basedir.h>
+
 #include "macros.h"
 #include "model/module_interfaces.h"
-#include "utils/xdg_base_directory.h"
 
 namespace po = boost::program_options;
 
@@ -38,11 +39,11 @@ namespace {
 
 namespace launcher {
     std::filesystem::path get_config_dir() {
-        return xdg::base_directory::get_config_home().append(PROJECT_NAME);
+        return std::move(xdg::basedir::get_config_home().append(PROJECT_NAME));
     }
 
     std::filesystem::path get_state_dir() {
-        return xdg::base_directory::get_state_home().append(PROJECT_NAME);
+        return std::move(xdg::basedir::get_state_home().append(PROJECT_NAME));
     }
 
     std::istream &operator>>(std::istream &is, provider_config &out) {

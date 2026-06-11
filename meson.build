@@ -37,7 +37,6 @@ sources = [
     'src/ui/main_window_x11.cpp',
     'src/ui/main_window_wayland.cpp',
     'src/utils/fuzzy_matcher.cpp',
-    'src/utils/xdg_base_directory.cpp',
     'src/utils/spawn_helper.cpp',
     'src/providers/desktop-entries/provider.cpp',
     'src/providers/console/provider.cpp',
