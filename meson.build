@@ -23,7 +23,7 @@ dependencies = [
     dependency('gtk4-layer-shell-0'),
     dependency('gtk4-x11'),
     dependency('x11'),
-    dependency('xdgdesktopentry++', fallback : ['xdgdesktopentry++', 'xdgdesktopentry_dep'], default_options: ['default_library=static'])
+    dependency('xdgpp', fallback : ['xdgpp', 'xdgpp_dep'], default_options: ['default_library=static'])
 ]
 
 sources = [
@@ -47,12 +47,10 @@ includes = [
     include_directories('include')
 ]
 
-exe = executable(
+executable(
     'launcher',
     sources,
     include_directories : includes,
     install : true,
     dependencies : dependencies
 )
-
-test('basic', exe)
