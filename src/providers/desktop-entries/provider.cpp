@@ -9,26 +9,6 @@
 #include "utils/fuzzy_matcher.h"
 #include "utils/spawn_helper.h"
 
-namespace {
-    std::string prepare_command_line(const xdg::desktop_entry_spec::desktop_entry &entry) {
-        static const boost::regex ignored_keys {"(?<!%)((?:%%)*)%[fFuU]"};
-        static const boost::regex percent_re {"%%"};
-        static const boost::regex uneven_percents_re {"(?<!%)(?:%%)*%(?!%)"};
-        // TODO: Some are unsupported
-        static const boost::regex unsupported_re {"(?<!%)((?:%%)*)%[ik]"};
-        static const boost::regex name_re {"(?<!%)((?:%%)*)%c"};
-        std::string cmdline {entry.get_exec()};
-        cmdline = boost::regex_replace(std::move(cmdline), ignored_keys, "$1");
-        cmdline = boost::regex_replace(std::move(cmdline), unsupported_re, "$1");
-        cmdline = boost::regex_replace(std::move(cmdline), name_re, entry.get_name().get());
-        if (boost::regex_search(cmdline, uneven_percents_re)) {
-            throw std::runtime_error("Invalid desktop file Exec entry");
-        }
-        cmdline = boost::regex_replace(std::move(cmdline), percent_re, "%");
-        return cmdline;
-    }
-} // namespace
-
 namespace launcher::provider::desktop_entries {
     class DesktopFileEntry : public interfaces::Entry {
         std::unique_ptr<xdg::desktop_entry_spec::desktop_entry> m_desktop_entry;
@@ -43,12 +23,16 @@ namespace launcher::provider::desktop_entries {
             id.resize(id.size() - 8);
             id = escape_systemd_string(id, false);
 
-            spawn_context context {};
-            context.executable = "/bin/sh";
-            context.arguments  = {"-c", prepare_command_line(*m_desktop_entry)};
-            context.unit_name  = "app-" + id + "-" + make_unique_identifier();
-            context.slice      = "app-" + id + ".slice";
-            spawn_as_service(context);
+            m_desktop_entry->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
+                // TODO: Terminal
+                spawn_context context {};
+                context.executable        = "/bin/sh";
+                context.arguments         = {"-c", std::move(params.command_list)};
+                context.working_directory = params.working_directory;
+                context.unit_name         = "app-" + id + "-" + make_unique_identifier();
+                context.slice             = "app-" + id + ".slice";
+                spawn_as_service(context);
+            });
         }
 
         [[nodiscard]] virtual std::string_view get_title() const noexcept final {

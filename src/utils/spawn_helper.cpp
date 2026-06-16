@@ -15,7 +15,8 @@
 #include "utils/owned_fd.h"
 
 namespace {
-    constexpr char SliceFormatString[] = "--property=Slice=%s";
+    constexpr char SliceFormatString[]            = "--property=Slice=%s";
+    constexpr char WorkingDirectoryFormatString[] = "--property=WorkingDirectory=%s";
 } // namespace
 
 namespace launcher {
@@ -58,7 +59,8 @@ namespace launcher {
         char arg_unit[]       = "-u";
         char arg_scope[]      = "--scope";
         char arg_end[]        = "--";
-        std::string slice {}; // Here because of lifetime
+        std::string slice {};             // Here because of lifetime
+        std::string working_directory {}; // Here because of lifetime
 
         std::vector<char *> args {run_executable, arg1, arg_exit_type, arg_type, arg_restart, arg_unit};
         args.push_back(context.unit_name.data());
@@ -66,9 +68,19 @@ namespace launcher {
             args.push_back(arg_scope);
         }
         if (!context.slice.empty()) {
-            slice.resize(sizeof(SliceFormatString) + context.slice.size() - 1);
+            slice.resize(sizeof(SliceFormatString) + context.slice.size());
             int res = snprintf(slice.data(), slice.size(), SliceFormatString, context.slice.c_str());
             args.push_back(slice.data());
+            r_assert(res >= 0 && size_t(res) < slice.size());
+        }
+        if (!context.working_directory.empty()) {
+            working_directory.resize(
+                sizeof(WorkingDirectoryFormatString) + context.working_directory.size());
+            int res = snprintf(working_directory.data(),
+                working_directory.size(),
+                WorkingDirectoryFormatString,
+                context.working_directory.c_str());
+            args.push_back(working_directory.data());
             r_assert(res >= 0 && size_t(res) < slice.size());
         }
         args.push_back(arg_end);
