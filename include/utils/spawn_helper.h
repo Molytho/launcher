@@ -9,6 +9,7 @@ namespace launcher {
     struct spawn_context {
         std::string executable;
         std::vector<std::string> arguments;
+        std::vector<std::string> environ;
         std::string working_directory;
         std::string unit_name;
         std::string slice;

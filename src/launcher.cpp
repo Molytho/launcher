@@ -51,6 +51,18 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p
     return query_plugins(std::string(p_query), history_provider);
 }
 
+interfaces::execute_context make_execute_context() {
+    interfaces::execute_context res {};
+    {
+        auto app_launch_context = Gdk::Display::get_default()->get_app_launch_context();
+        auto token              = app_launch_context->get_startup_notify_id(nullptr, {});
+        if (!token.empty()) {
+            res.set_startup_notify_token(std::move(token));
+        }
+    }
+    return res;
+}
+
 void setup_css_providers() {
     {
         auto css_provider = Gtk::CssProvider::create();
@@ -87,8 +99,9 @@ int main(int argc, [[maybe_unused]] char **argv) {
         r_assert(window);
         window->signal_entry_selected().connect([](auto entry_ptr) {
             r_assert(entry_ptr);
+            auto context = make_execute_context();
             history_provider::get_instance().add_to_history(*entry_ptr);
-            entry_ptr->execute();
+            entry_ptr->execute(context);
         });
         window->signal_query_changed().connect([window](std::string_view str) {
             auto results = query_plugins(str);

@@ -17,7 +17,7 @@ namespace launcher::provider::desktop_entries {
         DesktopFileEntry(std::unique_ptr<xdg::desktop_entry_spec::desktop_entry> desktop_entry) :
                 m_desktop_entry(std::move(desktop_entry)) {}
 
-        void execute() const final {
+        void execute(interfaces::execute_context &e_context) const final {
             auto id = m_desktop_entry->get_id();
             r_assert(id.ends_with(".desktop"));
             id.resize(id.size() - 8);
@@ -28,6 +28,7 @@ namespace launcher::provider::desktop_entries {
                 spawn_context context {};
                 context.executable        = "/bin/sh";
                 context.arguments         = {"-c", std::move(params.command_list)};
+                context.environ           = {e_context.get_startup_notify_environment()};
                 context.working_directory = params.working_directory;
                 context.unit_name         = "app-" + id + "-" + make_unique_identifier();
                 context.slice             = "app-" + id + ".slice";

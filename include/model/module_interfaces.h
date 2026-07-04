@@ -7,6 +7,8 @@
 #include <variant>
 #include <vector>
 
+#include "api.h"
+
 namespace launcher {
     class history_provider;
 
@@ -38,7 +40,7 @@ namespace launcher {
         public:
             virtual ~Entry() = default;
 
-            virtual void execute() const = 0;
+            virtual void execute(execute_context &context) const = 0;
 
             [[nodiscard]] virtual std::string_view get_title() const noexcept = 0;
 

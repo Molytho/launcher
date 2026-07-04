@@ -18,10 +18,11 @@ namespace launcher::provider::console {
     public:
         ConsoleEntry() = default;
 
-        void execute() const final {
+        void execute(interfaces::execute_context &e_context) const final {
             spawn_context context {};
             context.executable = "/usr/bin/alacritty";
             context.arguments  = {"-e", "sh", "-c", m_command};
+            context.environ    = {e_context.get_startup_notify_environment()};
             context.unit_name  = "command-" + make_unique_identifier();
             context.slice      = "app.slice";
             spawn_as_service(context);

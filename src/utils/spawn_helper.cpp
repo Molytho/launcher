@@ -3,6 +3,7 @@
 #include <array>
 #include <cctype>
 #include <charconv>
+#include <format>
 #include <spawn.h>
 #include <sstream>
 #include <sys/stat.h>
@@ -13,10 +14,112 @@
 #include "config.h"
 #include "macros.h"
 #include "utils/owned_fd.h"
+#include "utils/zstring_view.h"
 
 namespace {
-    constexpr char SliceFormatString[]            = "--property=Slice=%s";
-    constexpr char WorkingDirectoryFormatString[] = "--property=WorkingDirectory=%s";
+    using namespace string_utils;
+
+    constexpr zstring_view SliceFormatString            = "--property=Slice={}";
+    constexpr zstring_view WorkingDirectoryFormatString = "--property=WorkingDirectory={}";
+
+    constexpr zstring_view EnvironmentPrefixString = "--property=Environment=";
+
+    constexpr zstring_view RunExecutable = "systemd-run";
+    constexpr zstring_view ArgUser       = "--user";
+    constexpr zstring_view ArgExitType   = "--property=ExitType=cgroup";
+    constexpr zstring_view ArgType       = "--property=Type=exec";
+    constexpr zstring_view ArgRestart    = "--property=Restart=no";
+    constexpr zstring_view ArgUnit       = "-u";
+    constexpr zstring_view ArgScope      = "--scope";
+    constexpr zstring_view ArgEnd        = "--";
+
+    void score_or_service_make_args(std::vector<const char *> &args, launcher::spawn_context &context) {
+        if (launcher::options::get_instance().should_spawn_as_service()) {
+            for (auto &str : context.environ) {
+                str.insert(str.begin(), EnvironmentPrefixString.begin(), EnvironmentPrefixString.end());
+                args.push_back(str.c_str());
+            }
+
+            // TODO: Support for scope
+            if (!context.working_directory.empty()) {
+                context.working_directory
+                    = std::format(WorkingDirectoryFormatString, std::move(context.working_directory));
+                args.push_back(context.working_directory.c_str());
+            }
+        }
+    }
+
+    void scope_or_service_make_environ(std::vector<const char *> &environ, launcher::spawn_context &context) {
+        if (!launcher::options::get_instance().should_spawn_as_service()) {
+            environ.reserve(environ.size() + context.environ.size());
+            for (const auto &str : context.environ) {
+                environ.push_back(str.c_str());
+            }
+        }
+    }
+
+    std::vector<const char *> make_args(launcher::spawn_context &context) {
+        std::vector<const char *> res {RunExecutable.c_str(),
+            ArgUser.c_str(),
+            ArgExitType.c_str(),
+            ArgType.c_str(),
+            ArgRestart.c_str(),
+            ArgUnit.c_str(),
+            context.unit_name.c_str()};
+
+        if (!launcher::options::get_instance().should_spawn_as_service()) {
+            res.push_back(ArgScope.c_str());
+        }
+
+        if (!context.slice.empty()) {
+            context.slice = std::format(SliceFormatString, std::move(context.slice));
+            res.push_back(context.slice.c_str());
+        }
+
+        score_or_service_make_args(res, context);
+
+        res.push_back(ArgEnd.c_str());
+
+        // Application args
+        res.push_back(context.executable.c_str());
+        for (const auto &arg : context.arguments) {
+            res.push_back(arg.c_str());
+        }
+        res.push_back(nullptr);
+
+        return res;
+    }
+
+    std::vector<const char *> make_environ(launcher::spawn_context &context) {
+        char **begin = environ;
+        char **end   = [&]() {
+            char **it = environ;
+            r_assert(it);
+            while (*it != nullptr) {
+                it++;
+            }
+            return it;
+        }();
+        std::vector<const char *> res {begin, end};
+        scope_or_service_make_environ(res, context);
+        res.push_back(nullptr);
+        return res;
+    }
+
+    void posix_spawnp(pid_t *pid, const char *file, const posix_spawn_file_actions_t *file_actions,
+        const posix_spawnattr_t *attrp, const char *const argv[], const char *const envp[]) {
+        int res
+            = posix_spawnp(pid, file, file_actions, attrp, const_cast<char *const *>(argv), const_cast<char *const *>(envp));
+        if (res < 0) {
+            throw std::system_error(errno, std::system_category());
+        }
+    }
+
+    pid_t spawn(const char *const argv[], const char *const envp[]) {
+        pid_t pid {};
+        posix_spawnp(&pid, RunExecutable.c_str(), nullptr, nullptr, argv, envp);
+        return pid;
+    }
 } // namespace
 
 namespace launcher {
@@ -51,50 +154,9 @@ namespace launcher {
         r_assert(!context.executable.empty());
         r_assert(!context.unit_name.empty());
 
-        char run_executable[] = "systemd-run";
-        char arg1[]           = "--user";
-        char arg_exit_type[]  = "--property=ExitType=cgroup";
-        char arg_type[]       = "--property=Type=exec";
-        char arg_restart[]    = "--property=Restart=no";
-        char arg_unit[]       = "-u";
-        char arg_scope[]      = "--scope";
-        char arg_end[]        = "--";
-        std::string slice {};             // Here because of lifetime
-        std::string working_directory {}; // Here because of lifetime
-
-        std::vector<char *> args {run_executable, arg1, arg_exit_type, arg_type, arg_restart, arg_unit};
-        args.push_back(context.unit_name.data());
-        if (!options::get_instance().should_spawn_as_service()) {
-            args.push_back(arg_scope);
-        }
-        if (!context.slice.empty()) {
-            slice.resize(sizeof(SliceFormatString) + context.slice.size());
-            int res = snprintf(slice.data(), slice.size(), SliceFormatString, context.slice.c_str());
-            args.push_back(slice.data());
-            r_assert(res >= 0 && size_t(res) < slice.size());
-        }
-        if (!context.working_directory.empty()) {
-            working_directory.resize(
-                sizeof(WorkingDirectoryFormatString) + context.working_directory.size());
-            int res = snprintf(working_directory.data(),
-                working_directory.size(),
-                WorkingDirectoryFormatString,
-                context.working_directory.c_str());
-            args.push_back(working_directory.data());
-            r_assert(res >= 0 && size_t(res) < slice.size());
-        }
-        args.push_back(arg_end);
-        args.push_back(context.executable.data());
-        for (auto &arg : context.arguments) {
-            args.push_back(arg.data());
-        }
-        args.push_back(nullptr);
-
-        pid_t pid {0};
-        int res = posix_spawnp(&pid, run_executable, nullptr, nullptr, args.data(), environ);
-        if (res < 0) {
-            throw std::system_error(errno, std::system_category());
-        }
+        auto args    = make_args(context);
+        auto environ = make_environ(context);
+        spawn(args.data(), environ.data());
     }
 
     std::string make_unique_identifier() {

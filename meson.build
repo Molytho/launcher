@@ -40,6 +40,7 @@ sources = [
     'src/utils/spawn_helper.cpp',
     'src/providers/desktop-entries/provider.cpp',
     'src/providers/console/provider.cpp',
+    'src/model/api.cpp',
     ui_resource
 ]
 
