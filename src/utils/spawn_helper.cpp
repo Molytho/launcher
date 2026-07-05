@@ -19,72 +19,110 @@
 namespace {
     using namespace string_utils;
 
-    constexpr zstring_view SliceFormatString            = "--property=Slice={}";
-    constexpr zstring_view WorkingDirectoryFormatString = "--property=WorkingDirectory={}";
-
-    constexpr zstring_view EnvironmentPrefixString = "--property=Environment=";
+    constexpr zstring_view SliceFormatString = "--property=Slice={}";
 
     constexpr zstring_view RunExecutable = "systemd-run";
     constexpr zstring_view ArgUser       = "--user";
-    constexpr zstring_view ArgExitType   = "--property=ExitType=cgroup";
-    constexpr zstring_view ArgType       = "--property=Type=exec";
-    constexpr zstring_view ArgRestart    = "--property=Restart=no";
     constexpr zstring_view ArgUnit       = "-u";
-    constexpr zstring_view ArgScope      = "--scope";
     constexpr zstring_view ArgEnd        = "--";
 
-    void score_or_service_make_args(std::vector<const char *> &args, launcher::spawn_context &context) {
-        if (launcher::options::get_instance().should_spawn_as_service()) {
-            for (auto &str : context.environ) {
-                str.insert(str.begin(), EnvironmentPrefixString.begin(), EnvironmentPrefixString.end());
-                args.push_back(str.c_str());
-            }
+    const char *to_cstr(const std::string &str) {
+        return str.c_str();
+    }
 
-            // TODO: Support for scope
+    struct pre_execve_data {
+        std::string cwd;
+    };
+
+    struct make_parameters {
+        virtual void make_args(std::vector<const char *> &, launcher::spawn_context &) const {};
+        virtual void make_environ(std::vector<const char *> &, launcher::spawn_context &) const {};
+        virtual void pre_execve_setup(launcher::spawn_context &) const {};
+    };
+
+    struct make_service_parameters : make_parameters {
+        static constexpr zstring_view PropertyType     = "--property=Type=exec";
+        static constexpr zstring_view PropertyExitType = "--property=ExitType=cgroup";
+        static constexpr zstring_view PropertyRestart  = "--property=Restart=no";
+
+        static constexpr zstring_view WorkingDirectoryFormatString
+            = "--property=WorkingDirectory={}";
+
+        static constexpr zstring_view EnvironmentPrefixString = "--property=Environment=";
+
+        void make_args(std::vector<const char *> &args, launcher::spawn_context &context) const final {
+            args.insert(args.cend(),
+                {
+                    PropertyType.c_str(),
+                    PropertyExitType.c_str(),
+                    PropertyRestart.c_str(),
+                });
+
+            std::ranges::for_each(context.environ, [](auto &str) {
+                str.insert(str.begin(), EnvironmentPrefixString.begin(), EnvironmentPrefixString.end());
+            });
+            std::ranges::transform(context.environ, std::back_inserter(args), to_cstr);
+
             if (!context.working_directory.empty()) {
                 context.working_directory
                     = std::format(WorkingDirectoryFormatString, std::move(context.working_directory));
                 args.push_back(context.working_directory.c_str());
             }
         }
-    }
+    };
 
-    void scope_or_service_make_environ(std::vector<const char *> &environ, launcher::spawn_context &context) {
-        if (!launcher::options::get_instance().should_spawn_as_service()) {
+    constexpr make_service_parameters make_service_parameters_instance {};
+
+    struct make_scope_parameters : make_parameters {
+        static constexpr zstring_view ArgScope = "--scope";
+
+        void make_args(std::vector<const char *> &args, launcher::spawn_context &) const final {
+            args.push_back(ArgScope.c_str());
+        }
+
+        void make_environ(std::vector<const char *> &environ, launcher::spawn_context &context) const final {
             environ.reserve(environ.size() + context.environ.size());
-            for (const auto &str : context.environ) {
-                environ.push_back(str.c_str());
+            std::ranges::transform(context.environ, std::back_inserter(environ), to_cstr);
+        }
+
+        void pre_execve_setup(launcher::spawn_context &data) const final {
+            if (!data.working_directory.empty()) {
+                int res = chdir(data.working_directory.c_str());
+                if (res < 0) {
+                    throw std::system_error(errno, std::system_category());
+                }
             }
+        }
+    };
+
+    constexpr make_scope_parameters make_scope_parameters_instance {};
+
+    const make_parameters &get_make_parameters_impl() {
+        if (launcher::options::get_instance().should_spawn_as_service()) {
+            return make_service_parameters_instance;
+        } else {
+            return make_scope_parameters_instance;
         }
     }
 
     std::vector<const char *> make_args(launcher::spawn_context &context) {
         std::vector<const char *> res {RunExecutable.c_str(),
             ArgUser.c_str(),
-            ArgExitType.c_str(),
-            ArgType.c_str(),
-            ArgRestart.c_str(),
             ArgUnit.c_str(),
             context.unit_name.c_str()};
-
-        if (!launcher::options::get_instance().should_spawn_as_service()) {
-            res.push_back(ArgScope.c_str());
-        }
 
         if (!context.slice.empty()) {
             context.slice = std::format(SliceFormatString, std::move(context.slice));
             res.push_back(context.slice.c_str());
         }
 
-        score_or_service_make_args(res, context);
+        get_make_parameters_impl().make_args(res, context);
 
         res.push_back(ArgEnd.c_str());
 
         // Application args
         res.push_back(context.executable.c_str());
-        for (const auto &arg : context.arguments) {
-            res.push_back(arg.c_str());
-        }
+        std::ranges::transform(context.arguments, std::back_inserter(res), to_cstr);
         res.push_back(nullptr);
 
         return res;
@@ -100,24 +138,28 @@ namespace {
             }
             return it;
         }();
+
         std::vector<const char *> res {begin, end};
-        scope_or_service_make_environ(res, context);
+        get_make_parameters_impl().make_environ(res, context);
         res.push_back(nullptr);
         return res;
     }
 
-    void posix_spawnp(pid_t *pid, const char *file, const posix_spawn_file_actions_t *file_actions,
-        const posix_spawnattr_t *attrp, const char *const argv[], const char *const envp[]) {
-        int res
-            = posix_spawnp(pid, file, file_actions, attrp, const_cast<char *const *>(argv), const_cast<char *const *>(envp));
-        if (res < 0) {
+    pid_t spawn(const char *const argv[], const char *const envp[], launcher::spawn_context &context) {
+        r_assert(argv[0] != nullptr);
+        pid_t pid = fork();
+        if (pid < 0) {
             throw std::system_error(errno, std::system_category());
+        } else if (pid == 0) {
+            // Child
+            get_make_parameters_impl().pre_execve_setup(context);
+            execvpe(argv[0], const_cast<char *const *>(argv), const_cast<char *const *>(envp));
+            perror("execve failed:");
+            r_assert(false);
+        } else {
+            // Parent
+            return pid;
         }
-    }
-
-    pid_t spawn(const char *const argv[], const char *const envp[]) {
-        pid_t pid {};
-        posix_spawnp(&pid, RunExecutable.c_str(), nullptr, nullptr, argv, envp);
         return pid;
     }
 } // namespace
@@ -156,7 +198,7 @@ namespace launcher {
 
         auto args    = make_args(context);
         auto environ = make_environ(context);
-        spawn(args.data(), environ.data());
+        spawn(args.data(), environ.data(), context);
     }
 
     std::string make_unique_identifier() {
