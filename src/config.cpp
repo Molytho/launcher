@@ -25,6 +25,8 @@ namespace {
     constexpr char OptionHistoryBoost[]   = "history.boost";
     constexpr char OptionHistoryDecay[]   = "history.decay";
 
+    constexpr char OptionConsoleProviderIcon[] = "console-provider.icon";
+
     std::filesystem::path get_config_file_path() {
         auto path = launcher::get_config_dir();
         path.append("config");
@@ -84,7 +86,8 @@ namespace launcher {
             (OptionSpawnAsService, po::bool_switch()->default_value(false))
             (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
             (OptionHistoryBoost, po::value<interfaces::Score>()->default_value(10))
-            (OptionHistoryDecay, po::value<double>());
+            (OptionHistoryDecay, po::value<double>())
+            (OptionConsoleProviderIcon, po::value<std::string>()->default_value("Alacritty"));
         // clang-format on
         return options;
     }
@@ -151,4 +154,7 @@ namespace launcher {
         return m_results[OptionTerminalCmd].as<std::string>();
     }
 
+    const std::string &options::get_console_provider_icon() const noexcept {
+        return m_results[OptionConsoleProviderIcon].as<std::string>();
+    }
 } // namespace launcher

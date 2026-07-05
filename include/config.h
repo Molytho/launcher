@@ -42,6 +42,8 @@ namespace launcher {
         const std::vector<provider_config> &get_provider_config() const noexcept;
 
         const std::string &get_terminal_cmd() const noexcept;
+
+        const std::string &get_console_provider_icon() const noexcept;
     };
 } // namespace launcher
 

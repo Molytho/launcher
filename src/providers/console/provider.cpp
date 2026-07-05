@@ -10,12 +10,15 @@
 namespace {
     constexpr launcher::interfaces::Score EntryScore = 1000;
 
-    // TODO
-    constexpr std::string_view Icon = "Alacritty";
+    std::string_view get_icon() {
+        return launcher::options::get_instance().get_console_provider_icon();
+    }
 } // namespace
 
 namespace launcher::provider::console {
     class ConsoleEntry : public interfaces::Entry {
+        static std::string_view Icon;
+
         std::string m_command;
 
     public:
@@ -42,6 +45,9 @@ namespace launcher::provider::console {
         }
 
         [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept override {
+            if (Icon.empty()) {
+                Icon = ::get_icon();
+            }
             return Icon;
         }
 
@@ -54,6 +60,8 @@ namespace launcher::provider::console {
             set_score(EntryScore);
         }
     };
+
+    std::string_view ConsoleEntry::Icon {};
 } // namespace launcher::provider::console
 
 namespace launcher::providers {
