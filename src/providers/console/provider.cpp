@@ -23,7 +23,7 @@ namespace launcher::provider::console {
 
         void execute(interfaces::execute_context &e_context) const final {
             spawn_context context {};
-            context.executable = "sh";
+            context.executable = "/bin/sh";
             context.arguments  = {"-c",
                 std::vformat(options::get_instance().get_terminal_cmd(), std::make_format_args(m_command))};
             context.environ    = {e_context.get_startup_notify_environment()};

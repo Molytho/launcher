@@ -1,10 +1,12 @@
 #include "providers/desktop-entries/provider.h"
 
+#include <format>
 #include <ranges>
 
 #include <boost/regex.hpp>
 #include <desktop-entry.h>
 
+#include "config.h"
 #include "macros.h"
 #include "utils/fuzzy_matcher.h"
 #include "utils/spawn_helper.h"
@@ -24,10 +26,15 @@ namespace launcher::provider::desktop_entries {
             id = escape_systemd_string(id, false);
 
             m_desktop_entry->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
-                // TODO: Terminal
                 spawn_context context {};
-                context.executable        = "/bin/sh";
-                context.arguments         = {"-c", std::move(params.command_list)};
+                context.executable = "/bin/sh";
+                if (params.terminal) {
+                    context.arguments = {"-c",
+                        std::vformat(options::get_instance().get_terminal_cmd(),
+                            std::make_format_args(params.command_list))};
+                } else {
+                    context.arguments = {"-c", std::move(params.command_list)};
+                }
                 context.environ           = {e_context.get_startup_notify_environment()};
                 context.working_directory = params.working_directory;
                 context.unit_name         = "app-" + id + "-" + make_unique_identifier();
