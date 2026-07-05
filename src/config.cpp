@@ -17,6 +17,8 @@ namespace {
 
     constexpr char OptionProviderConfig[] = "providers";
 
+    constexpr char OptionTerminalCmd[] = "terminal-cmd";
+
     constexpr char OptionSpawnAsService[] = "spawn.service";
 
     constexpr char OptionHistoryMaxSize[] = "history.max-size";
@@ -78,6 +80,7 @@ namespace launcher {
             (OptionWidth, po::value<int>()->default_value(1300))
             (OptionIconSize, po::value<int>()->default_value(64))
             (OptionProviderConfig, po::value<std::vector<provider_config>>())
+            (OptionTerminalCmd, po::value<std::string>()->default_value("/usr/bin/alacritty -e sh -c \"{}\""))
             (OptionSpawnAsService, po::bool_switch()->default_value(false))
             (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
             (OptionHistoryBoost, po::value<interfaces::Score>()->default_value(10))
@@ -142,6 +145,10 @@ namespace launcher {
             static auto default_value = make_default_provider_config();
             return default_value;
         }
+    }
+
+    const std::string &options::get_terminal_cmd() const noexcept {
+        return m_results[OptionTerminalCmd].as<std::string>();
     }
 
 } // namespace launcher

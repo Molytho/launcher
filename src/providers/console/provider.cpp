@@ -1,13 +1,16 @@
 #include "providers/console/provider.h"
 
+#include <format>
 #include <spawn.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "utils/spawn_helper.h"
 
 namespace {
     constexpr launcher::interfaces::Score EntryScore = 1000;
 
+    // TODO
     constexpr std::string_view Icon = "Alacritty";
 } // namespace
 
@@ -20,8 +23,9 @@ namespace launcher::provider::console {
 
         void execute(interfaces::execute_context &e_context) const final {
             spawn_context context {};
-            context.executable = "/usr/bin/alacritty";
-            context.arguments  = {"-e", "sh", "-c", m_command};
+            context.executable = "sh";
+            context.arguments  = {"-c",
+                std::vformat(options::get_instance().get_terminal_cmd(), std::make_format_args(m_command))};
             context.environ    = {e_context.get_startup_notify_environment()};
             context.unit_name  = "command-" + make_unique_identifier();
             context.slice      = "app.slice";
