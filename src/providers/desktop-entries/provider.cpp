@@ -87,9 +87,9 @@ namespace launcher::providers {
     std::vector<std::shared_ptr<interfaces::Entry>> DesktopEntryProvider::query(
         const interfaces::Query &query) const {
         auto view = std::views::transform(m_available_entries, [&query](const auto &entry) {
-            auto match_result_title   = utils::fuzzy_match(query.get_query(), entry->get_title());
-            auto match_result_command = utils::fuzzy_match(query.get_query(), entry->get_exec());
-            entry->set_score(std::max(match_result_title.score, match_result_command.score));
+            auto match_result = utils::fuzzy_match_multiple(query.get_query(),
+                std::initializer_list<std::string_view> {entry->get_title(), entry->get_exec()});
+            entry->set_score(match_result.score);
             return std::shared_ptr<interfaces::Entry>(entry);
         });
         return {std::move_iterator(view.begin()), std::move_iterator(view.end())};
