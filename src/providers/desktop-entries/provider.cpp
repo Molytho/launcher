@@ -61,6 +61,10 @@ namespace launcher::provider::desktop_entries {
             return m_desktop_entry->get_id();
         }
 
+        [[nodiscard]] std::string_view get_exec() const noexcept {
+            return m_desktop_entry->get_exec();
+        }
+
         using interfaces::Entry::set_score;
     };
 } // namespace launcher::provider::desktop_entries
@@ -83,8 +87,9 @@ namespace launcher::providers {
     std::vector<std::shared_ptr<interfaces::Entry>> DesktopEntryProvider::query(
         const interfaces::Query &query) const {
         auto view = std::views::transform(m_available_entries, [&query](const auto &entry) {
-            auto match_result = utils::fuzzy_match(query.get_query(), entry->get_title());
-            entry->set_score(match_result.score);
+            auto match_result_title   = utils::fuzzy_match(query.get_query(), entry->get_title());
+            auto match_result_command = utils::fuzzy_match(query.get_query(), entry->get_exec());
+            entry->set_score(std::max(match_result_title.score, match_result_command.score));
             return std::shared_ptr<interfaces::Entry>(entry);
         });
         return {std::move_iterator(view.begin()), std::move_iterator(view.end())};
