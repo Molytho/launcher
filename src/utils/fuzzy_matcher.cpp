@@ -1,38 +1,27 @@
 #include "utils/fuzzy_matcher.h"
 
+#include <rapidfuzz/fuzz.hpp>
+
 #include <cctype>
 #include <climits>
 #include <string_view>
 
 namespace {
-    using score_t               = launcher::utils::fuzzy_match_score;
-    constexpr score_t SCORE_MIN = std::numeric_limits<score_t>::min();
-
-    constexpr score_t score_bonus_per_correct_character = 20;
-    constexpr score_t score_penalty_per_index           = 1;
-
-    bool compare_char(char a, char b, bool caseInsensitive) {
-        if (caseInsensitive) {
-            return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
-        } else {
-            return a == b;
-        }
+    std::string tolower(std::string_view str) {
+        std::string res;
+        res.resize(str.size());
+        std::ranges::transform(str, res.begin(), ::tolower);
+        return res;
     }
 
-    score_t match(std::string_view query, std::string_view stringToSearchIn, bool caseInsensitive) {
-        if (query.size() > stringToSearchIn.size()) {
-            query = query.substr(0, stringToSearchIn.size());
+    launcher::utils::fuzzy_match_result fuzzy_match_impl(std::string_view query, std::string_view stringToSearchIn) {
+        if (query.empty() || stringToSearchIn.empty()) {
+            return {INT_MIN};
         }
 
-        score_t score               = 0;
-        const char *search_position = stringToSearchIn.data();
-        for (char c : query) {
-            if (compare_char(c, *search_position, caseInsensitive)) {
-                score += score_bonus_per_correct_character;
-            }
-            ++search_position;
-        }
-        return score;
+        launcher::utils::fuzzy_match_result result {
+            .score = rapidfuzz::fuzz::partial_ratio(query, stringToSearchIn)};
+        return result;
     }
 } // namespace
 
@@ -42,17 +31,13 @@ namespace launcher::utils {
             return {INT_MIN};
         }
 
-        score_t max_score = SCORE_MIN;
-        score_t penalty   = 0;
-        for (size_t i = 0; i < stringToSearchIn.size(); ++i, penalty += score_penalty_per_index) {
-            int64_t score = match(query, stringToSearchIn.substr(i), caseInsensitive);
-            score -= penalty;
-            if (score > max_score) {
-                max_score = score;
-            }
+        if (caseInsensitive) {
+            auto lower_query  = tolower(query);
+            auto lower_string = tolower(stringToSearchIn);
+            return fuzzy_match_impl(lower_query, lower_string);
+        } else {
+            return fuzzy_match_impl(query, stringToSearchIn);
         }
-
-        return {max_score};
     }
 
 } // namespace launcher::utils
