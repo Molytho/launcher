@@ -26,7 +26,18 @@ namespace launcher {
 
         using IconVariant = std::variant<std::string_view>;
 
-        class Entry {
+        class Action {
+        public:
+            virtual ~Action() = default;
+
+            virtual void execute(execute_context &context) const = 0;
+
+            [[nodiscard]] virtual std::string_view get_title() const noexcept = 0;
+
+            [[nodiscard]] virtual IconVariant get_icon() const noexcept = 0;
+        };
+
+        class Entry : public Action {
         private:
             friend launcher::history_provider;
 
@@ -40,15 +51,12 @@ namespace launcher {
         public:
             virtual ~Entry() = default;
 
-            virtual void execute(execute_context &context) const = 0;
-
-            [[nodiscard]] virtual std::string_view get_title() const noexcept = 0;
-
             [[nodiscard]] virtual std::string_view get_subtitle() const noexcept = 0;
 
-            [[nodiscard]] virtual IconVariant get_icon() const noexcept = 0;
-
             [[nodiscard]] virtual std::string get_id() const noexcept = 0;
+
+            // TODO: Custom collection
+            [[nodiscard]] virtual const std::vector<std::shared_ptr<Action>> &get_actions() const = 0;
 
             [[nodiscard]] Score get_score() const noexcept { return m_score; }
         };

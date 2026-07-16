@@ -13,6 +13,8 @@ namespace {
     std::string_view get_icon() {
         return launcher::options::get_instance().get_console_provider_icon();
     }
+
+    constexpr std::vector<std::shared_ptr<launcher::interfaces::Action>> EmptyActions;
 } // namespace
 
 namespace launcher::provider::console {
@@ -53,6 +55,10 @@ namespace launcher::provider::console {
 
         [[nodiscard]] std::string get_id() const noexcept override {
             return "command_" + m_command;
+        }
+
+        const std::vector<std::shared_ptr<launcher::interfaces::Action>> &get_actions() const override {
+            return EmptyActions;
         }
 
         void reset(std::string_view str) {

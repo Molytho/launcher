@@ -39,3 +39,7 @@
     font-family: Roboto;
     font-size: 14px;
 }
+
+treeexpander > indent, treeexpander > expander {
+    min-width: 15px;
+}

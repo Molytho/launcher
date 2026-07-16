@@ -12,8 +12,30 @@
 #include "utils/spawn_helper.h"
 
 namespace launcher::provider::desktop_entries {
+    class DesktopActions : public interfaces::Action {
+        std::shared_ptr<xdg::desktop_entry_spec::application_action> m_action;
+
+    public:
+        DesktopActions(std::shared_ptr<xdg::desktop_entry_spec::application_action> action) :
+                m_action(std::move(action)) {}
+
+        std::string_view get_title() const noexcept override { return m_action->get_name().get(); }
+
+        interfaces::IconVariant get_icon() const noexcept override {
+            if (auto icon = m_action->get_icon(); icon) {
+                return icon->get();
+            } else {
+                return "";
+            }
+        }
+
+        void execute(interfaces::execute_context &) const override { std::cout << "Action run\n"; }
+    };
+
     class DesktopFileEntry : public interfaces::Entry {
         std::unique_ptr<xdg::desktop_entry_spec::desktop_entry> m_desktop_entry;
+        mutable std::vector<std::shared_ptr<launcher::interfaces::Action>> m_actions {};
+        mutable bool m_actions_initialized {false};
 
     public:
         DesktopFileEntry(std::unique_ptr<xdg::desktop_entry_spec::desktop_entry> desktop_entry) :
@@ -63,6 +85,18 @@ namespace launcher::provider::desktop_entries {
 
         [[nodiscard]] std::string_view get_exec() const noexcept {
             return m_desktop_entry->get_exec();
+        }
+
+        const std::vector<std::shared_ptr<launcher::interfaces::Action>> &get_actions() const override {
+            if (!m_actions_initialized) {
+                auto &actions = m_desktop_entry->get_actions();
+                for (auto &action : actions) {
+                    auto ptr = std::make_shared<DesktopActions>(action);
+                    m_actions.emplace_back(std::move(ptr));
+                }
+                m_actions_initialized = true;
+            }
+            return m_actions;
         }
 
         using interfaces::Entry::set_score;

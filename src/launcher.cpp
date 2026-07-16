@@ -100,7 +100,9 @@ int main(int argc, [[maybe_unused]] char **argv) {
         window->signal_entry_selected().connect([](auto entry_ptr) {
             r_assert(entry_ptr);
             auto context = make_execute_context();
-            history_provider::get_instance().add_to_history(*entry_ptr);
+            if (auto entry = dynamic_cast<interfaces::Entry *>(entry_ptr.get()); entry) {
+                history_provider::get_instance().add_to_history(*entry);
+            }
             entry_ptr->execute(context);
         });
         window->signal_query_changed().connect([window](std::string_view str) {

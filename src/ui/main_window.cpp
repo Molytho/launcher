@@ -53,30 +53,65 @@ namespace {
 
     Gtk::Widget *create_widget(const Glib::RefPtr<Glib::Object> &obj) {
         r_assert(obj);
-        auto model_entry = std::dynamic_pointer_cast<launcher::ui::ListModelEntry>(obj);
-        return new launcher::ui::ListItem(model_entry->get_entry(),
-            launcher::options::get_instance().get_icon_size());
+        auto row  = std::dynamic_pointer_cast<Gtk::TreeListRow>(obj);
+        auto item = row->get_item();
+
+        if (auto model_entry = std::dynamic_pointer_cast<launcher::ui::ListModelEntry>(item); model_entry) {
+            return Gtk::make_managed<launcher::ui::EntryListItem>(model_entry->get_entry(),
+                launcher::options::get_instance().get_icon_size(),
+                row);
+        } else if (auto model_action = std::dynamic_pointer_cast<launcher::ui::ListModelAction>(item); model_action) {
+            return Gtk::make_managed<launcher::ui::ActionListItem>(model_action->get_action(), 16);
+        } else {
+            std::abort();
+        }
+    }
+
+    Glib::RefPtr<Gio::ListModel> create_model(const Glib::RefPtr<Glib::ObjectBase> &obj) {
+        return std::dynamic_pointer_cast<Gio::ListModel>(obj);
     }
 } // namespace
 
 namespace launcher::ui {
+    ListModelAction::ListModelAction(std::shared_ptr<interfaces::Action> e) :
+            ObjectBase("ListModelAction"), m_action(std::move(e)) {}
+
+    Glib::RefPtr<ListModelAction> ListModelAction::create(std::shared_ptr<interfaces::Action> e) {
+        return Glib::make_refptr_for_instance(new ListModelAction(std::move(e)));
+    }
+
     ListModelEntry::ListModelEntry(std::shared_ptr<interfaces::Entry> e) :
-            ObjectBase("EntryListItem"), m_entry(std::move(e)) {}
+            ObjectBase("ListModelEntry"), m_entry(std::move(e)) {}
 
     Glib::RefPtr<ListModelEntry> ListModelEntry::create(std::shared_ptr<interfaces::Entry> e) {
         return Glib::make_refptr_for_instance(new ListModelEntry(std::move(e)));
+    }
+
+    GType ListModelEntry::get_item_type_vfunc() {
+        return ListModelAction::get_type();
+    }
+
+    guint ListModelEntry::get_n_items_vfunc() {
+        return m_entry->get_actions().size();
+    }
+
+    gpointer ListModelEntry::get_item_vfunc(guint position) {
+        auto action = m_entry->get_actions().at(position);
+        auto action_object = ListModelAction::create(action);
+        return action_object->gobj_copy();
     }
 
     MainWindow::MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder) :
             Gtk::Window(base_object), m_entry(builder->get_widget<Gtk::Entry>("search")),
             m_scroll(builder->get_widget<Gtk::ScrolledWindow>("scroll")),
             m_listbox(builder->get_widget<Gtk::ListBox>("app-list")),
-            m_model(Gio::ListStore<ListModelEntry>::create()) {
+            m_model(Gio::ListStore<ListModelEntry>::create()),
+            m_tree_model(Gtk::TreeListModel::create(m_model, sigc::ptr_fun(create_model), false, false)) {
         m_entry->property_text().signal_changed().connect(sigc::mem_fun(*this, &MainWindow::emit_query_changed));
         m_listbox->signal_row_activated().connect(sigc::mem_fun(*this, &MainWindow::emit_entry_selected));
         setup_controllers();
 
-        m_listbox->bind_model(m_model, sigc::ptr_fun(create_widget));
+        m_listbox->bind_model(m_tree_model, sigc::ptr_fun(create_widget));
     }
 
     void MainWindow::setup_controllers() {
@@ -139,9 +174,9 @@ namespace launcher::ui {
     }
 
     void MainWindow::emit_entry_selected(Gtk::ListBoxRow *row) {
-        auto list_item = dynamic_cast<ListItem *>(row);
+        auto list_item = dynamic_cast<ActionListItem *>(row);
         r_assert(list_item);
-        m_signal_entry_selected.emit(list_item->get_entry());
+        m_signal_entry_selected.emit(list_item->get_action());
         close();
     }
 
