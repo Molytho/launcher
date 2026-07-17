@@ -11,6 +11,34 @@
 #include "utils/fuzzy_matcher.h"
 #include "utils/spawn_helper.h"
 
+namespace {
+    std::string make_id(xdg::desktop_entry_spec::desktop_entry &entry) {
+        auto id = entry.get_id();
+        r_assert(id.ends_with(".desktop"));
+        id.resize(id.size() - 8);
+        id = launcher::escape_systemd_string(id, false);
+        return id;
+    }
+
+    void launch_impl(launcher::interfaces::execute_context &e_context, std::string id,
+        xdg::desktop_entry_spec::launch_parameters &params) {
+        launcher::spawn_context context {};
+        context.executable = "/bin/sh";
+        if (params.terminal) {
+            context.arguments = {"-c",
+                std::vformat(launcher::options::get_instance().get_terminal_cmd(),
+                    std::make_format_args(params.command_list))};
+        } else {
+            context.arguments = {"-c", std::move(params.command_list)};
+        }
+        context.environ           = {e_context.get_startup_notify_environment()};
+        context.working_directory = params.working_directory;
+        context.unit_name         = "app-" + id + "-" + launcher::make_unique_identifier();
+        context.slice             = "app-" + id + ".slice";
+        spawn_as_service(context);
+    }
+} // namespace
+
 namespace launcher::provider::desktop_entries {
     class DesktopActions : public interfaces::Action {
         std::shared_ptr<xdg::desktop_entry_spec::application_action> m_action;
@@ -29,39 +57,29 @@ namespace launcher::provider::desktop_entries {
             }
         }
 
-        void execute(interfaces::execute_context &) const override { std::cout << "Action run\n"; }
+        void execute(interfaces::execute_context &e_context) const override {
+            auto entry = m_action->try_get_entry();
+            if (!entry) {
+                throw std::logic_error("desktop entry already destroyed");
+            }
+            m_action->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
+                launch_impl(e_context, make_id(*entry), params);
+            });
+        }
     };
 
     class DesktopFileEntry : public interfaces::Entry {
-        std::unique_ptr<xdg::desktop_entry_spec::desktop_entry> m_desktop_entry;
+        std::shared_ptr<xdg::desktop_entry_spec::desktop_entry> m_desktop_entry;
         mutable std::vector<std::shared_ptr<launcher::interfaces::Action>> m_actions {};
         mutable bool m_actions_initialized {false};
 
     public:
-        DesktopFileEntry(std::unique_ptr<xdg::desktop_entry_spec::desktop_entry> desktop_entry) :
+        DesktopFileEntry(std::shared_ptr<xdg::desktop_entry_spec::desktop_entry> desktop_entry) :
                 m_desktop_entry(std::move(desktop_entry)) {}
 
         void execute(interfaces::execute_context &e_context) const final {
-            auto id = m_desktop_entry->get_id();
-            r_assert(id.ends_with(".desktop"));
-            id.resize(id.size() - 8);
-            id = escape_systemd_string(id, false);
-
             m_desktop_entry->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
-                spawn_context context {};
-                context.executable = "/bin/sh";
-                if (params.terminal) {
-                    context.arguments = {"-c",
-                        std::vformat(options::get_instance().get_terminal_cmd(),
-                            std::make_format_args(params.command_list))};
-                } else {
-                    context.arguments = {"-c", std::move(params.command_list)};
-                }
-                context.environ           = {e_context.get_startup_notify_environment()};
-                context.working_directory = params.working_directory;
-                context.unit_name         = "app-" + id + "-" + make_unique_identifier();
-                context.slice             = "app-" + id + ".slice";
-                spawn_as_service(context);
+                launch_impl(e_context, make_id(*m_desktop_entry), params);
             });
         }
 
