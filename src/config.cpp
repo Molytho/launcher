@@ -11,9 +11,10 @@
 namespace po = boost::program_options;
 
 namespace {
-    constexpr char OptionHeight[]   = "height";
-    constexpr char OptionWidth[]    = "width";
-    constexpr char OptionIconSize[] = "icon-size";
+    constexpr char OptionHeight[]         = "height";
+    constexpr char OptionWidth[]          = "width";
+    constexpr char OptionIconSize[]       = "icon-size";
+    constexpr char OptionActionIconSize[] = "action-icon-size";
 
     constexpr char OptionProviderConfig[] = "providers";
 
@@ -81,6 +82,7 @@ namespace launcher {
             (OptionHeight, po::value<int>()->default_value(600))
             (OptionWidth, po::value<int>()->default_value(1300))
             (OptionIconSize, po::value<int>()->default_value(64))
+            (OptionActionIconSize, po::value<int>()->default_value(16))
             (OptionProviderConfig, po::value<std::vector<provider_config>>())
             (OptionTerminalCmd, po::value<std::string>()->default_value("/usr/bin/alacritty -e sh -c \"{}\""))
             (OptionSpawnAsService, po::bool_switch()->default_value(false))
@@ -117,6 +119,10 @@ namespace launcher {
 
     int options::get_icon_size() const noexcept {
         return m_results[OptionIconSize].as<int>();
+    }
+
+    int options::get_action_icon_size() const noexcept {
+        return m_results[OptionActionIconSize].as<int>();
     }
 
     size_t options::get_history_max_size() const noexcept {

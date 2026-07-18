@@ -32,6 +32,7 @@ namespace launcher {
         int get_height() const noexcept;
         int get_width() const noexcept;
         int get_icon_size() const noexcept;
+        int get_action_icon_size() const noexcept;
 
         size_t get_history_max_size() const noexcept;
         interfaces::Score get_history_boost() const noexcept;

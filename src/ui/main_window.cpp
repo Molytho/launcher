@@ -61,7 +61,8 @@ namespace {
                 launcher::options::get_instance().get_icon_size(),
                 row);
         } else if (auto model_action = std::dynamic_pointer_cast<launcher::ui::ListModelAction>(item); model_action) {
-            return Gtk::make_managed<launcher::ui::ActionListItem>(model_action->get_action(), 16);
+            return Gtk::make_managed<launcher::ui::ActionListItem>(model_action->get_action(),
+                launcher::options::get_instance().get_action_icon_size());
         } else {
             std::abort();
         }
@@ -96,7 +97,7 @@ namespace launcher::ui {
     }
 
     gpointer ListModelEntry::get_item_vfunc(guint position) {
-        auto action = m_entry->get_actions().at(position);
+        auto action        = m_entry->get_actions().at(position);
         auto action_object = ListModelAction::create(action);
         return action_object->gobj_copy();
     }
