@@ -44,7 +44,7 @@ namespace launcher::ui {
 
     class MainWindow : public Gtk::Window {
         Glib::RefPtr<Gtk::Entry> m_entry;
-        Glib::RefPtr<Gtk::ScrolledWindow> m_scroll;
+        Glib::RefPtr<Gtk::Viewport> m_listbox_viewport;
         Glib::RefPtr<Gtk::ListBox> m_listbox;
         Glib::RefPtr<Gio::ListStore<ListModelEntry>> m_model;
         Glib::RefPtr<Gtk::TreeListModel> m_tree_model;
@@ -52,14 +52,14 @@ namespace launcher::ui {
         sigc::signal<void(std::string_view)> m_signal_query_changed {};
 
         void setup_controllers();
+        void move_entry_focus(Gtk::DirectionType direction);
+        void move_entry_focus(size_t index);
         bool on_key_pressed(guint keyval, guint, Gdk::ModifierType);
 
         void emit_entry_selected(Gtk::ListBoxRow *row);
         void emit_query_changed() const;
 
         void on_realize() override;
-
-        bool entry_has_focus() const noexcept;
 
     public:
         MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder);
@@ -73,10 +73,7 @@ namespace launcher::ui {
                     std::move_iterator(view.end())};
             }();
             m_model->splice(0, m_model->get_n_items(), additions);
-            if (auto first_row = m_listbox->get_row_at_index(0); first_row) {
-                m_scroll->get_vadjustment()->set_value(0);
-                m_listbox->select_row(*first_row);
-            }
+            move_entry_focus(0);
         }
 
         sigc::signal<void(std::shared_ptr<interfaces::Action>)> signal_entry_selected() const noexcept {

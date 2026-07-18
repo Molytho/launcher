@@ -104,7 +104,7 @@ namespace launcher::ui {
 
     MainWindow::MainWindow(GtkWindow *base_object, const Glib::RefPtr<Gtk::Builder> &builder) :
             Gtk::Window(base_object), m_entry(builder->get_widget<Gtk::Entry>("search")),
-            m_scroll(builder->get_widget<Gtk::ScrolledWindow>("scroll")),
+            m_listbox_viewport(builder->get_widget<Gtk::Viewport>("app-list-viewport")),
             m_listbox(builder->get_widget<Gtk::ListBox>("app-list")),
             m_model(Gio::ListStore<ListModelEntry>::create()),
             m_tree_model(Gtk::TreeListModel::create(m_model, sigc::ptr_fun(create_model), false, false)) {
@@ -129,17 +129,32 @@ namespace launcher::ui {
         platform_setup(*this);
     }
 
-    bool MainWindow::entry_has_focus() const noexcept {
-        // GtkEntry's implementation is broken as fuck...
-        auto focus = get_focus();
-        if (!focus) {
-            return false;
+    void MainWindow::move_entry_focus(Gtk::DirectionType direction) {
+        auto index = [&]() {
+            auto selected_row = m_listbox->get_selected_row();
+            r_assert(selected_row);
+            return selected_row->get_index();
+        }();
+
+        switch (direction) {
+        case Gtk::DirectionType::UP:
+            index--;
+            break;
+        case Gtk::DirectionType::DOWN:
+            index++;
+            break;
+        default:
+            std::abort();
         }
-        auto parent = focus->get_parent();
-        if (!parent) {
-            return false;
+
+        move_entry_focus(index);
+    }
+
+    void MainWindow::move_entry_focus(size_t index) {
+        if (auto row = m_listbox->get_row_at_index(index); row) {
+            m_listbox->select_row(*row);
+            m_listbox_viewport->scroll_to(*row);
         }
-        return parent == m_entry.get();
     }
 
     bool MainWindow::on_key_pressed(guint keyval, guint, Gdk::ModifierType) {
@@ -147,28 +162,17 @@ namespace launcher::ui {
         case GDK_KEY_Escape:
             close();
             return true;
-        case GDK_KEY_Down: {
-            if (entry_has_focus()) {
-                if (auto row = m_listbox->get_row_at_index(1); row) {
-                    m_listbox->select_row(*row);
-                    row->grab_focus();
-                    return true;
-                }
-            }
-            break;
-        }
+        case GDK_KEY_Down:
+            move_entry_focus(Gtk::DirectionType::DOWN);
+            return true;
         case GDK_KEY_Up:
-            if (auto row = m_listbox->get_row_at_index(0); row && row->is_focus()) {
-                m_entry->grab_focus_without_selecting();
-                return true;
-            }
-            break;
-        case GDK_KEY_Return: {
+            move_entry_focus(Gtk::DirectionType::UP);
+            return true;
+        case GDK_KEY_Return:
             if (auto row = m_listbox->get_selected_row(); row) {
                 row->activate();
                 return true;
             }
-        }
         }
 
         return false;
