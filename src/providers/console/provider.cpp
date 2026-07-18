@@ -8,23 +8,23 @@
 #include "utils/spawn_helper.h"
 
 namespace {
-    constexpr launcher::interfaces::Score EntryScore = 1000;
+    constexpr launcher::interfaces::score EntryScore = 1000;
 
     std::string_view get_icon() {
         return launcher::options::get_instance().get_console_provider_icon();
     }
 
-    constexpr std::vector<std::shared_ptr<launcher::interfaces::Action>> EmptyActions;
+    constexpr std::vector<std::shared_ptr<launcher::interfaces::action>> EmptyActions;
 } // namespace
 
 namespace launcher::provider::console {
-    class ConsoleEntry : public interfaces::Entry {
+    class console_entry : public interfaces::entry {
         static std::string_view Icon;
 
         std::string m_command;
 
     public:
-        ConsoleEntry() = default;
+        console_entry() = default;
 
         void execute(interfaces::execute_context &e_context) const final {
             spawn_context context {};
@@ -46,7 +46,7 @@ namespace launcher::provider::console {
             return m_command;
         }
 
-        [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept override {
+        [[nodiscard]] virtual interfaces::icon_variant get_icon() const noexcept override {
             if (Icon.empty()) {
                 Icon = ::get_icon();
             }
@@ -57,7 +57,7 @@ namespace launcher::provider::console {
             return "command_" + m_command;
         }
 
-        const std::vector<std::shared_ptr<launcher::interfaces::Action>> &get_actions() const override {
+        const std::vector<std::shared_ptr<launcher::interfaces::action>> &get_actions() const override {
             return EmptyActions;
         }
 
@@ -67,14 +67,14 @@ namespace launcher::provider::console {
         }
     };
 
-    std::string_view ConsoleEntry::Icon {};
+    std::string_view console_entry::Icon {};
 } // namespace launcher::provider::console
 
 namespace launcher::providers {
-    ConsoleProvider::ConsoleProvider() :
-            interfaces::Provider(), m_entry(std::make_shared<provider::console::ConsoleEntry>()) {}
+    console_provider::console_provider() :
+            interfaces::provider(), m_entry(std::make_shared<launcher::provider::console::console_entry>()) {}
 
-    std::vector<std::shared_ptr<interfaces::Entry>> ConsoleProvider::query(const interfaces::Query &query) const {
+    std::vector<std::shared_ptr<interfaces::entry>> console_provider::query(const interfaces::query &query) const {
         if (query.get_query().empty()) {
             return {};
         }

@@ -4,17 +4,17 @@
 #include "model/module_interfaces.h"
 
 namespace launcher::provider::console {
-    class ConsoleEntry;
+    class console_entry;
 }
 
 namespace launcher::providers {
-    class ConsoleProvider : public interfaces::Provider {
-        std::shared_ptr<provider::console::ConsoleEntry> m_entry;
+    class console_provider : public interfaces::provider {
+        std::shared_ptr<launcher::provider::console::console_entry> m_entry;
 
     public:
-        ConsoleProvider();
+        console_provider();
 
-        std::vector<std::shared_ptr<interfaces::Entry>> query(const interfaces::Query &query) const override;
+        std::vector<std::shared_ptr<interfaces::entry>> query(const interfaces::query &query) const final;
     };
 } // namespace launcher::providers
 

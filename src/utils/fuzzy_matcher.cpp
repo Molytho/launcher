@@ -3,7 +3,6 @@
 #include <rapidfuzz/fuzz.hpp>
 
 #include <cctype>
-#include <climits>
 #include <string_view>
 
 namespace launcher::utils {

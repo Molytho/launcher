@@ -4,17 +4,17 @@
 #include "model/module_interfaces.h"
 
 namespace launcher::provider::desktop_entries {
-    class DesktopFileEntry;
+    class desktop_file_entry;
 }
 
 namespace launcher::providers {
-    class DesktopEntryProvider : public interfaces::Provider {
-        std::vector<std::shared_ptr<provider::desktop_entries::DesktopFileEntry>> m_available_entries;
+    class desktop_entry_provider : public interfaces::provider {
+        std::vector<std::shared_ptr<launcher::provider::desktop_entries::desktop_file_entry>> m_available_entries;
 
     public:
-        DesktopEntryProvider();
+        desktop_entry_provider();
 
-        std::vector<std::shared_ptr<interfaces::Entry>> query(const interfaces::Query &query) const override;
+        std::vector<std::shared_ptr<interfaces::entry>> query(const interfaces::query &query) const override;
     };
 } // namespace launcher::providers
 

@@ -22,7 +22,7 @@ namespace {
 } // namespace
 
 namespace launcher::ui {
-    void ActionListItem::build_layout(int icon_size) {
+    void action_list_item::build_layout(int icon_size) {
         init_label(m_title);
         m_title.add_css_class("app-title");
 
@@ -40,7 +40,7 @@ namespace launcher::ui {
         set_child(*box.release());
     }
 
-    ActionListItem::ActionListItem(const char *type_name, std::shared_ptr<interfaces::Action> action) :
+    action_list_item::action_list_item(const char *type_name, std::shared_ptr<interfaces::action> action) :
             Glib::ObjectBase(type_name), Gtk::ListBoxRow(), m_action(std::move(action)) {
         r_assert(m_action);
 
@@ -48,22 +48,22 @@ namespace launcher::ui {
         set_icon(m_action->get_icon());
     }
 
-    ActionListItem::ActionListItem(std::shared_ptr<interfaces::Action> action, int icon_size) :
-            ActionListItem("ActionListItem", std::move(action)) {
+    action_list_item::action_list_item(std::shared_ptr<interfaces::action> action, int icon_size) :
+            action_list_item("ActionListItem", std::move(action)) {
         build_layout(icon_size);
     }
 
-    ActionListItem::~ActionListItem() = default;
+    action_list_item::~action_list_item() = default;
 
-    void ActionListItem::set_title(std::string str) {
+    void action_list_item::set_title(std::string str) {
         m_title.set_label(std::move(str));
     }
 
-    void ActionListItem::set_title(std::string_view str) {
+    void action_list_item::set_title(std::string_view str) {
         return set_title(std::string(str));
     }
 
-    void ActionListItem::set_icon(interfaces::IconVariant str) {
+    void action_list_item::set_icon(interfaces::icon_variant str) {
         auto icon = std::visit(
             [](auto &&arg) -> Glib::RefPtr<Gio::Icon> {
                 using T = std::decay_t<decltype(arg)>;
@@ -81,7 +81,7 @@ namespace launcher::ui {
         }
     }
 
-    void EntryListItem::build_layout(int icon_size) {
+    void entry_list_item::build_layout(int icon_size) {
         init_label(m_title);
         m_title.add_css_class("app-title");
 
@@ -116,9 +116,9 @@ namespace launcher::ui {
         set_child(m_tree_expander);
     }
 
-    EntryListItem::EntryListItem(std::shared_ptr<interfaces::Entry> p_entry, int icon_size,
+    entry_list_item::entry_list_item(std::shared_ptr<interfaces::entry> p_entry, int icon_size,
         const Glib::RefPtr<Gtk::TreeListRow> &tree_list_row) :
-            ActionListItem("EntryListItem", std::move(p_entry)) {
+            action_list_item("EntryListItem", std::move(p_entry)) {
         build_layout(icon_size);
 
         auto entry = get_entry();
@@ -130,21 +130,21 @@ namespace launcher::ui {
         }
     }
 
-    EntryListItem::~EntryListItem() = default;
+    entry_list_item::~entry_list_item() = default;
 
-    void EntryListItem::set_subtitle(std::string str) {
+    void entry_list_item::set_subtitle(std::string str) {
         m_subtitle.set_label(std::move(str));
     }
 
-    void EntryListItem::set_subtitle(std::string_view str) {
+    void entry_list_item::set_subtitle(std::string_view str) {
         return set_subtitle(std::string(str));
     }
 
-    void EntryListItem::expand(bool value) {
+    void entry_list_item::expand(bool value) {
         m_tree_expander.get_list_row()->set_expanded(value);
     }
 
-    void EntryListItem::colapse() {
+    void entry_list_item::colapse() {
         expand(false);
     }
 } // namespace launcher::ui

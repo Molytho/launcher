@@ -59,20 +59,20 @@ namespace launcher {
         }
     }
 
-    void history_provider::boost_history_entries(std::vector<std::shared_ptr<Entry>> &entries) const {
+    void history_provider::boost_history_entries(std::vector<std::shared_ptr<entry>> &entries) const {
         double boost             = m_options.get_history_boost();
         const double boost_decay = m_options.get_history_decay();
         for (const std::string &history_entry : m_history_entries) {
             auto it = std::ranges::find_if(entries,
                 [&](const auto &entry) { return entry->get_id() == history_entry; });
             if (it != entries.end()) {
-                (*it)->boost_score(Score(boost));
+                (*it)->boost_score(score(boost));
             }
             boost -= boost_decay;
         }
     }
 
-    void history_provider::add_to_history(const Entry &entry) {
+    void history_provider::add_to_history(const entry &entry) {
         auto it = std::ranges::find_if(m_history_entries,
             [&](const auto &history_entry) { return entry.get_id() == history_entry; });
         if (it != m_history_entries.end()) {

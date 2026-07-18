@@ -35,7 +35,7 @@ namespace launcher {
         int get_action_icon_size() const noexcept;
 
         size_t get_history_max_size() const noexcept;
-        interfaces::Score get_history_boost() const noexcept;
+        interfaces::score get_history_boost() const noexcept;
         double get_history_decay() const noexcept;
 
         bool should_spawn_as_service() const noexcept;

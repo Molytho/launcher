@@ -87,7 +87,7 @@ namespace launcher {
             (OptionTerminalCmd, po::value<std::string>()->default_value("/usr/bin/alacritty -e sh -c \"{}\""))
             (OptionSpawnAsService, po::bool_switch()->default_value(false))
             (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
-            (OptionHistoryBoost, po::value<interfaces::Score>()->default_value(10))
+            (OptionHistoryBoost, po::value<interfaces::score>()->default_value(10))
             (OptionHistoryDecay, po::value<double>())
             (OptionConsoleProviderIcon, po::value<std::string>()->default_value("Alacritty"));
         // clang-format on
@@ -129,8 +129,8 @@ namespace launcher {
         return m_results[OptionHistoryMaxSize].as<size_t>();
     }
 
-    interfaces::Score options::get_history_boost() const noexcept {
-        return m_results[OptionHistoryBoost].as<interfaces::Score>();
+    interfaces::score options::get_history_boost() const noexcept {
+        return m_results[OptionHistoryBoost].as<interfaces::score>();
     }
 
     double options::get_history_decay() const noexcept {

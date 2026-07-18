@@ -9,10 +9,11 @@
 #include "config.h"
 #include "macros.h"
 #include "utils/fuzzy_matcher.h"
+#include "utils/ranges_helper.h"
 #include "utils/spawn_helper.h"
 
 namespace {
-    std::string make_id(xdg::desktop_entry_spec::desktop_entry &entry) {
+    [[nodiscard]] std::string make_id(xdg::desktop_entry_spec::desktop_entry &entry) {
         auto id = entry.get_id();
         r_assert(id.ends_with(".desktop"));
         id.resize(id.size() - 8);
@@ -20,7 +21,7 @@ namespace {
         return id;
     }
 
-    void launch_impl(launcher::interfaces::execute_context &e_context, std::string id,
+    void launch(launcher::interfaces::execute_context &e_context, std::string id,
         xdg::desktop_entry_spec::launch_parameters &params) {
         launcher::spawn_context context {};
         context.executable = "/bin/sh";
@@ -40,16 +41,18 @@ namespace {
 } // namespace
 
 namespace launcher::provider::desktop_entries {
-    class DesktopActions : public interfaces::Action {
+    class desktop_action : public interfaces::action {
         std::shared_ptr<xdg::desktop_entry_spec::application_action> m_action;
 
     public:
-        DesktopActions(std::shared_ptr<xdg::desktop_entry_spec::application_action> action) :
+        desktop_action(std::shared_ptr<xdg::desktop_entry_spec::application_action> action) :
                 m_action(std::move(action)) {}
 
-        std::string_view get_title() const noexcept override { return m_action->get_name().get(); }
+        [[nodiscard]] std::string_view get_title() const noexcept final {
+            return m_action->get_name().get();
+        }
 
-        interfaces::IconVariant get_icon() const noexcept override {
+        [[nodiscard]] interfaces::icon_variant get_icon() const noexcept final {
             if (auto icon = m_action->get_icon(); icon) {
                 return icon->get();
             } else {
@@ -57,31 +60,36 @@ namespace launcher::provider::desktop_entries {
             }
         }
 
-        void execute(interfaces::execute_context &e_context) const override {
+        void execute(interfaces::execute_context &e_context) const final {
             auto entry = m_action->try_get_entry();
             if (!entry) {
                 throw std::logic_error("desktop entry already destroyed");
             }
             m_action->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
-                launch_impl(e_context, make_id(*entry), params);
+                launch(e_context, make_id(*entry), params);
             });
         }
     };
 
-    class DesktopFileEntry : public interfaces::Entry {
+    class desktop_file_entry : public interfaces::entry {
         std::shared_ptr<xdg::desktop_entry_spec::desktop_entry> m_desktop_entry;
-        mutable std::vector<std::shared_ptr<launcher::interfaces::Action>> m_actions {};
-        mutable bool m_actions_initialized {false};
+        std::vector<std::shared_ptr<launcher::interfaces::action>> m_actions;
+
+        static std::vector<std::shared_ptr<launcher::interfaces::action>> make_actions(
+            xdg::desktop_entry_spec::desktop_entry *entry) {
+            r_assert(entry);
+            return std::views::transform(entry->get_actions(),
+                       [](const std::shared_ptr<xdg::desktop_entry_spec::application_action> &action)
+                           -> std::shared_ptr<launcher::interfaces::action> {
+                           return std::make_shared<desktop_action>(action);
+                       })
+                   | view_helper::to_vector;
+        }
 
     public:
-        DesktopFileEntry(std::shared_ptr<xdg::desktop_entry_spec::desktop_entry> desktop_entry) :
-                m_desktop_entry(std::move(desktop_entry)) {}
-
-        void execute(interfaces::execute_context &e_context) const final {
-            m_desktop_entry->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
-                launch_impl(e_context, make_id(*m_desktop_entry), params);
-            });
-        }
+        desktop_file_entry(std::shared_ptr<xdg::desktop_entry_spec::desktop_entry> desktop_entry) :
+                m_desktop_entry(std::move(desktop_entry)),
+                m_actions(make_actions(m_desktop_entry.get())) {}
 
         [[nodiscard]] virtual std::string_view get_title() const noexcept final {
             return m_desktop_entry->get_name().get();
@@ -92,7 +100,7 @@ namespace launcher::provider::desktop_entries {
             return desc ? std::string_view(desc->get()) : "";
         }
 
-        [[nodiscard]] virtual interfaces::IconVariant get_icon() const noexcept final {
+        [[nodiscard]] virtual interfaces::icon_variant get_icon() const noexcept final {
             auto icon = m_desktop_entry->get_icon();
             return icon ? std::string_view(icon->get()) : "";
         }
@@ -105,45 +113,41 @@ namespace launcher::provider::desktop_entries {
             return m_desktop_entry->get_exec();
         }
 
-        const std::vector<std::shared_ptr<launcher::interfaces::Action>> &get_actions() const override {
-            if (!m_actions_initialized) {
-                auto &actions = m_desktop_entry->get_actions();
-                for (auto &action : actions) {
-                    auto ptr = std::make_shared<DesktopActions>(action);
-                    m_actions.emplace_back(std::move(ptr));
-                }
-                m_actions_initialized = true;
-            }
+        const std::vector<std::shared_ptr<launcher::interfaces::action>> &get_actions() const override {
             return m_actions;
         }
 
-        using interfaces::Entry::set_score;
+        using interfaces::entry::set_score;
+
+        void execute(interfaces::execute_context &e_context) const final {
+            m_desktop_entry->launch([&](xdg::desktop_entry_spec::launch_parameters &params) {
+                launch(e_context, make_id(*m_desktop_entry), params);
+            });
+        }
     };
 } // namespace launcher::provider::desktop_entries
 
 namespace {
-    std::vector<std::shared_ptr<launcher::provider::desktop_entries::DesktopFileEntry>> make_available_entries() {
-        auto view = std::views::filter(xdg::desktop_entry_spec::get_all_desktop_entries(), [](const auto &entry) {
+    std::vector<std::shared_ptr<launcher::provider::desktop_entries::desktop_file_entry>> make_available_entries() {
+        return std::views::filter(xdg::desktop_entry_spec::get_all_desktop_entries(), [](const auto &entry) {
             return entry->should_show();
         }) | std::views::transform([](auto &app_info) {
-            return std::make_shared<launcher::provider::desktop_entries::DesktopFileEntry>(std::move(app_info));
-        });
-        return {std::move_iterator(view.begin()), std::move_iterator(view.end())};
+            return std::make_shared<launcher::provider::desktop_entries::desktop_file_entry>(std::move(app_info));
+        }) | view_helper::to_vector;
     }
 } // namespace
 
 namespace launcher::providers {
-    DesktopEntryProvider::DesktopEntryProvider() :
-            interfaces::Provider(), m_available_entries(make_available_entries()) {}
+    desktop_entry_provider::desktop_entry_provider() :
+            interfaces::provider(), m_available_entries(make_available_entries()) {}
 
-    std::vector<std::shared_ptr<interfaces::Entry>> DesktopEntryProvider::query(
-        const interfaces::Query &query) const {
-        auto view = std::views::transform(m_available_entries, [&query](const auto &entry) {
+    std::vector<std::shared_ptr<interfaces::entry>> desktop_entry_provider::query(
+        const interfaces::query &query) const {
+        return std::views::transform(m_available_entries, [&query](const auto &entry) -> std::shared_ptr<interfaces::entry> {
             auto match_result = utils::fuzzy_match_multiple(query.get_query(),
                 std::initializer_list<std::string_view> {entry->get_title(), entry->get_exec()});
             entry->set_score(match_result.score);
-            return std::shared_ptr<interfaces::Entry>(entry);
-        });
-        return {std::move_iterator(view.begin()), std::move_iterator(view.end())};
+            return entry;
+        }) | view_helper::to_vector;
     }
 } // namespace launcher::providers

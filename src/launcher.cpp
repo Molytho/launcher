@@ -11,7 +11,7 @@
 
 using namespace launcher;
 
-std::vector<std::pair<char, interfaces::Query>> make_queries(std::string_view query) {
+std::vector<std::pair<char, interfaces::query>> make_queries(std::string_view query) {
     if (query.empty()) {
         return {
             {0, {query}}
@@ -24,11 +24,11 @@ std::vector<std::pair<char, interfaces::Query>> make_queries(std::string_view qu
     }
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
+std::vector<std::shared_ptr<interfaces::entry>> query_plugins(
     std::string query, const history_provider &history_provider = history_provider::get_instance()) {
     const provider_repository &repo = provider_repository::get_instance();
 
-    std::vector<std::shared_ptr<interfaces::Entry>> result {};
+    std::vector<std::shared_ptr<interfaces::entry>> result {};
     for (const auto &[activation_char, query] : make_queries(query)) {
         for (const auto &provider : repo.get_active_providers(activation_char)) {
             auto provider_result = provider->query(query);
@@ -46,7 +46,7 @@ std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(
     return result;
 }
 
-std::vector<std::shared_ptr<interfaces::Entry>> query_plugins(std::string_view p_query,
+std::vector<std::shared_ptr<interfaces::entry>> query_plugins(std::string_view p_query,
     const history_provider &history_provider = history_provider::get_instance()) {
     return query_plugins(std::string(p_query), history_provider);
 }
@@ -95,12 +95,12 @@ int main(int argc, [[maybe_unused]] char **argv) {
 
         auto builder = Gtk::Builder::create_from_resource("/Launcher/Launcher.ui");
         r_assert(builder);
-        auto window = Gtk::Builder::get_widget_derived<ui::MainWindow>(builder, "launcher");
+        auto window = Gtk::Builder::get_widget_derived<ui::main_window>(builder, "launcher");
         r_assert(window);
         window->signal_entry_selected().connect([](auto entry_ptr) {
             r_assert(entry_ptr);
             auto context = make_execute_context();
-            if (auto entry = dynamic_cast<interfaces::Entry *>(entry_ptr.get()); entry) {
+            if (auto entry = dynamic_cast<interfaces::entry *>(entry_ptr.get()); entry) {
                 history_provider::get_instance().add_to_history(*entry);
             }
             entry_ptr->execute(context);

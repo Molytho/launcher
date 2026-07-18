@@ -19,9 +19,9 @@ namespace launcher {
         history_provider(const options &options = options::get_instance());
         ~history_provider();
 
-        void boost_history_entries(std::vector<std::shared_ptr<interfaces::Entry>> &entries) const;
+        void boost_history_entries(std::vector<std::shared_ptr<interfaces::entry>> &entries) const;
 
-        void add_to_history(const interfaces::Entry &entry);
+        void add_to_history(const interfaces::entry &entry);
     };
 } // namespace launcher
 
