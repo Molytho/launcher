@@ -157,6 +157,12 @@ namespace launcher::ui {
         }
     }
 
+    void MainWindow::expand_focused_entry(bool expand) {
+        if (auto entry_row = dynamic_cast<EntryListItem *>(m_listbox->get_selected_row()); entry_row) {
+            entry_row->expand(expand);
+        }
+    }
+
     bool MainWindow::on_key_pressed(guint keyval, guint, Gdk::ModifierType) {
         switch (keyval) {
         case GDK_KEY_Escape:
@@ -167,6 +173,12 @@ namespace launcher::ui {
             return true;
         case GDK_KEY_Up:
             move_entry_focus(Gtk::DirectionType::UP);
+            return true;
+        case GDK_KEY_Right:
+            expand_focused_entry();
+            return true;
+        case GDK_KEY_Left:
+            expand_focused_entry(false);
             return true;
         case GDK_KEY_Return:
             if (auto row = m_listbox->get_selected_row(); row) {

@@ -54,6 +54,7 @@ namespace launcher::ui {
         void setup_controllers();
         void move_entry_focus(Gtk::DirectionType direction);
         void move_entry_focus(size_t index);
+        void expand_focused_entry(bool expand = true);
         bool on_key_pressed(guint keyval, guint, Gdk::ModifierType);
 
         void emit_entry_selected(Gtk::ListBoxRow *row);

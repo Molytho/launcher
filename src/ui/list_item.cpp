@@ -139,4 +139,12 @@ namespace launcher::ui {
     void EntryListItem::set_subtitle(std::string_view str) {
         return set_subtitle(std::string(str));
     }
+
+    void EntryListItem::expand(bool value) {
+        m_tree_expander.get_list_row()->set_expanded(value);
+    }
+
+    void EntryListItem::colapse() {
+        expand(false);
+    }
 } // namespace launcher::ui

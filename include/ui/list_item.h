@@ -44,6 +44,9 @@ namespace launcher::ui {
         void set_subtitle(std::string str);
         void set_subtitle(std::string_view str);
 
+        void expand(bool value = true);
+        void colapse();
+
         std::shared_ptr<interfaces::Entry> get_entry() const noexcept {
             return std::static_pointer_cast<interfaces::Entry>(ActionListItem::m_action);
         }
