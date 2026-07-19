@@ -38,7 +38,11 @@ std::vector<std::shared_ptr<interfaces::entry>> query_plugins(
         }
     }
 
-    history_provider.boost_history_entries(result);
+    for (auto &entry : result) {
+        if (auto ptr = std::dynamic_pointer_cast<interfaces::historyable>(entry); ptr) {
+            history_provider.boost_history_entry(*ptr);
+        }
+    }
 
     std::ranges::stable_sort(result,
         [](const auto &lhs, const auto &rhs) { return lhs->get_score() > rhs->get_score(); });
@@ -100,7 +104,7 @@ int main(int argc, [[maybe_unused]] char **argv) {
         window->signal_entry_selected().connect([](auto entry_ptr) {
             r_assert(entry_ptr);
             auto context = make_execute_context();
-            if (auto entry = dynamic_cast<interfaces::entry *>(entry_ptr.get()); entry) {
+            if (auto entry = dynamic_cast<interfaces::historyable *>(entry_ptr.get()); entry) {
                 history_provider::get_instance().add_to_history(*entry);
             }
             entry_ptr->execute(context);

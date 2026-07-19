@@ -41,7 +41,7 @@ namespace {
 } // namespace
 
 namespace launcher::provider::desktop_entries {
-    class desktop_action : public interfaces::action {
+    class desktop_action : public interfaces::action, public interfaces::historyable {
         std::shared_ptr<xdg::desktop_entry_spec::application_action> m_action;
 
     public:
@@ -60,6 +60,16 @@ namespace launcher::provider::desktop_entries {
             }
         }
 
+        [[nodiscard]] std::string get_history_id() const final {
+            auto entry = m_action->try_get_entry();
+            if (!entry) {
+                throw std::logic_error("desktop_entry of desktop_action already destroyed");
+            }
+            return entry->get_id();
+        }
+
+        void boost_score(interfaces::score) noexcept final { std::abort(); }
+
         void execute(interfaces::execute_context &e_context) const final {
             auto entry = m_action->try_get_entry();
             if (!entry) {
@@ -71,7 +81,7 @@ namespace launcher::provider::desktop_entries {
         }
     };
 
-    class desktop_file_entry : public interfaces::entry {
+    class desktop_file_entry : public interfaces::historyable_entry {
         std::shared_ptr<xdg::desktop_entry_spec::desktop_entry> m_desktop_entry;
         std::vector<std::shared_ptr<launcher::interfaces::action>> m_actions;
 
@@ -105,7 +115,7 @@ namespace launcher::provider::desktop_entries {
             return icon ? std::string_view(icon->get()) : "";
         }
 
-        [[nodiscard]] std::string get_id() const noexcept final {
+        [[nodiscard]] std::string get_history_id() const noexcept final {
             return m_desktop_entry->get_id();
         }
 

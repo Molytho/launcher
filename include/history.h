@@ -4,7 +4,6 @@
 #include "model/module_interfaces.h"
 
 #include <string>
-#include <vector>
 
 #include "config.h"
 #include "utils/singleton.h"
@@ -19,9 +18,9 @@ namespace launcher {
         history_provider(const options &options = options::get_instance());
         ~history_provider();
 
-        void boost_history_entries(std::vector<std::shared_ptr<interfaces::entry>> &entries) const;
+        void boost_history_entry(interfaces::historyable &historyable) const;
 
-        void add_to_history(const interfaces::entry &entry);
+        void add_to_history(const interfaces::historyable &entry);
     };
 } // namespace launcher
 

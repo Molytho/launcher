@@ -86,7 +86,7 @@ namespace launcher {
             (OptionProviderConfig, po::value<std::vector<provider_config>>())
             (OptionTerminalCmd, po::value<std::string>()->default_value("/usr/bin/alacritty -e sh -c \"{}\""))
             (OptionSpawnAsService, po::bool_switch()->default_value(false))
-            (OptionHistoryMaxSize, po::value<size_t>()->default_value(64))
+            (OptionHistoryMaxSize, po::value<size_t>()->default_value(200))
             (OptionHistoryBoost, po::value<interfaces::score>()->default_value(10))
             (OptionHistoryDecay, po::value<double>())
             (OptionConsoleProviderIcon, po::value<std::string>()->default_value("Alacritty"));

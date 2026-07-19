@@ -53,10 +53,6 @@ namespace launcher::provider::console {
             return Icon;
         }
 
-        [[nodiscard]] std::string get_id() const noexcept override {
-            return "command_" + m_command;
-        }
-
         const std::vector<std::shared_ptr<launcher::interfaces::action>> &get_actions() const override {
             return EmptyActions;
         }

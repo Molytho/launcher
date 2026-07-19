@@ -1,6 +1,7 @@
 #ifndef LAUNCHER_ENTRY_H
 #define LAUNCHER_ENTRY_H
 
+#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -26,6 +27,15 @@ namespace launcher {
 
         using icon_variant = std::variant<std::string_view>;
 
+        class historyable {
+        public:
+            virtual ~historyable() = default;
+
+            [[nodiscard]] virtual std::string get_history_id() const = 0;
+
+            virtual void boost_score(score score) noexcept = 0;
+        };
+
         class action {
         public:
             virtual ~action() = default;
@@ -39,8 +49,6 @@ namespace launcher {
 
         class entry : public action {
         private:
-            friend launcher::history_provider;
-
             score m_score {};
 
         protected:
@@ -53,12 +61,16 @@ namespace launcher {
 
             [[nodiscard]] virtual std::string_view get_subtitle() const noexcept = 0;
 
-            [[nodiscard]] virtual std::string get_id() const noexcept = 0;
-
-            // TODO: Custom collection
             [[nodiscard]] virtual const std::vector<std::shared_ptr<action>> &get_actions() const = 0;
 
             [[nodiscard]] score get_score() const noexcept { return m_score; }
+        };
+
+        class historyable_entry : public entry, public historyable {
+            void boost_score(score score) noexcept final {
+                std::cout << score << "\n";
+                entry::boost_score(score);
+            }
         };
 
         class provider {

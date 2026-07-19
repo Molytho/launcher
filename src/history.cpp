@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <memory>
 
 #include "config.h"
 
@@ -59,22 +58,17 @@ namespace launcher {
         }
     }
 
-    void history_provider::boost_history_entries(std::vector<std::shared_ptr<entry>> &entries) const {
+    void history_provider::boost_history_entry(interfaces::historyable &historyable) const {
         double boost             = m_options.get_history_boost();
         const double boost_decay = m_options.get_history_decay();
-        for (const std::string &history_entry : m_history_entries) {
-            auto it = std::ranges::find_if(entries,
-                [&](const auto &entry) { return entry->get_id() == history_entry; });
-            if (it != entries.end()) {
-                (*it)->boost_score(score(boost));
-            }
-            boost -= boost_decay;
+        auto it = std::ranges::find(m_history_entries, historyable.get_history_id());
+        if (it != m_history_entries.end()) {
+            historyable.boost_score(boost - std::distance(m_history_entries.begin(), it) * boost_decay);
         }
     }
 
-    void history_provider::add_to_history(const entry &entry) {
-        auto it = std::ranges::find_if(m_history_entries,
-            [&](const auto &history_entry) { return entry.get_id() == history_entry; });
+    void history_provider::add_to_history(const interfaces::historyable &entry) {
+        auto it = std::ranges::find(m_history_entries, entry.get_history_id());
         if (it != m_history_entries.end()) {
             it++;
         } else if (m_history_entries.size() < m_options.get_history_max_size()) {
@@ -82,7 +76,7 @@ namespace launcher {
             it = m_history_entries.end();
         }
         std::shift_right(m_history_entries.begin(), it, 1);
-        m_history_entries.front() = entry.get_id();
+        m_history_entries.front() = entry.get_history_id();
         m_changed                 = true;
     }
 } // namespace launcher
