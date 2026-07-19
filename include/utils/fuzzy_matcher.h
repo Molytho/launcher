@@ -26,7 +26,7 @@ namespace launcher::utils {
             double best_score = score_cutoff;
             Sentence2 best_match;
 
-            rapidfuzz::fuzz::CachedRatio<typename Sentence1::value_type> scorer(query);
+            rapidfuzz::fuzz::CachedPartialRatio<typename Sentence1::value_type> scorer(query);
 
             for (const auto &choice : choices) {
                 double score = scorer.similarity(choice, best_score);
