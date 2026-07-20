@@ -1,16 +1,19 @@
 #ifndef LAUNCHER_FUZZY_MATCHER_HPP
 #define LAUNCHER_FUZZY_MATCHER_HPP
 
-#include <optional>
 #include <string_view>
 
 #include <rapidfuzz/fuzz.hpp>
+
+#include "macros.h"
 
 namespace launcher::utils {
     using fuzzy_match_score = double;
 
     struct fuzzy_match_result {
-        fuzzy_match_score score;
+        fuzzy_match_score score = std::numeric_limits<fuzzy_match_score>::min();
+        std::string match       = "";
+        size_t index            = 0;
     };
 
     [[nodiscard]] fuzzy_match_result fuzzy_match(
@@ -20,29 +23,34 @@ namespace launcher::utils {
         std::string tolower(std::string_view str);
 
         template<typename Sentence1, typename Iterable, typename Sentence2 = typename Iterable::value_type>
-        std::optional<std::pair<Sentence2, double>> extractOne(
+        fuzzy_match_result extractOne(
             const Sentence1 &query, const Iterable &choices, const double score_cutoff = 0.0) {
             bool match_found  = false;
             double best_score = score_cutoff;
             Sentence2 best_match;
+            size_t best_index;
 
             rapidfuzz::fuzz::CachedPartialRatio<typename Sentence1::value_type> scorer(query);
 
+            size_t i = 0;
             for (const auto &choice : choices) {
                 double score = scorer.similarity(choice, best_score);
 
-                if (score >= best_score) {
+                if (score > best_score || (score == best_score && !match_found)) {
                     match_found = true;
                     best_score  = score;
                     best_match  = choice;
+                    best_index  = i;
                 }
+
+                i++;
             }
 
             if (!match_found) {
-                return std::nullopt;
+                return {};
             }
 
-            return std::make_pair(best_match, best_score);
+            return {.score = best_score, .match = std::string(best_match), .index = best_index};
         }
     } // namespace detail
 
@@ -56,13 +64,16 @@ namespace launcher::utils {
                 lower_strings.reserve(std::ranges::size(strings));
             }
             std::ranges::transform(strings, std::back_inserter(lower_strings), detail::tolower);
-            return fuzzy_match_multiple(detail::tolower(query), std::move(lower_strings), false);
+
+            auto match = fuzzy_match_multiple(detail::tolower(query), std::move(lower_strings), false);
+            r_assert(match.index < lower_strings.size());
+            auto it = strings.begin();
+            std::advance(it, match.index);
+            match.match = *it;
+            return match;
         }
 
-        auto match = detail::extractOne(query, strings);
-        fuzzy_match_result res {
-            .score = match ? match->second : std::numeric_limits<fuzzy_match_score>::min()};
-        return res;
+        return detail::extractOne(query, strings);
     }
 } // namespace launcher::utils
 

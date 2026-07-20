@@ -1,7 +1,6 @@
 #ifndef LAUNCHER_ENTRY_H
 #define LAUNCHER_ENTRY_H
 
-#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -68,7 +67,6 @@ namespace launcher {
 
         class historyable_entry : public entry, public historyable {
             void boost_score(score score) noexcept final {
-                std::cout << score << "\n";
                 entry::boost_score(score);
             }
         };

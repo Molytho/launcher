@@ -156,7 +156,11 @@ namespace launcher::providers {
         return std::views::transform(m_available_entries, [&query](const auto &entry) -> std::shared_ptr<interfaces::entry> {
             auto match_result = utils::fuzzy_match_multiple(query.get_query(),
                 std::initializer_list<std::string_view> {entry->get_title(), entry->get_exec()});
-            entry->set_score(match_result.score);
+
+            interfaces::score score = match_result.score;
+            score += 10 * (1.0 / (std::abs(std::ssize(match_result.match) - std::ssize(query.get_query())) + 1));
+
+            entry->set_score(score);
             return entry;
         }) | view_helper::to_vector;
     }
